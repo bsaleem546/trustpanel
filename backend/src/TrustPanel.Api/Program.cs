@@ -149,6 +149,8 @@ app.UseMiddleware<WorkspaceResolutionMiddleware>();
 
 app.MapAuthEndpoints();
 app.MapWorkspaceEndpoints();
+app.MapFormEndpoints();
+app.MapPublicFormEndpoints();
 
 if (hangfireEnabled)
 {

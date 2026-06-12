@@ -375,15 +375,15 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Application/Forms/**`
 - Create: `src/TrustPanel.Infrastructure/Security/TurnstileClient.cs`
 
-- [ ] Implement collection form builder APIs for question toggles, allowed submission type, thank-you config, redirect URL, and reward config.
-- [ ] Implement public form read endpoint by workspace slug/custom domain and form slug.
-- [ ] Implement text testimonial submission via `SubmitTestimonialCommand`.
-- [ ] Validate Cloudflare Turnstile token server-side before accepting public submissions.
-- [ ] Apply rate limit: 5 submissions per IP per hour per form using Redis token bucket.
-- [ ] Dispatch Hangfire jobs after submission: thank-you email, owner notification, sentiment analysis when enabled.
-- [ ] Implement auto-approve rule: rating >= 4 and sentiment score > 0.4 after AI job completes.
-- [ ] Add CSP headers on public collection form endpoints.
-- [ ] Add integration tests for form read, valid submission, Turnstile failure, and rate limit failure.
+- [x] Implement collection form builder APIs for question toggles, allowed submission type, thank-you config, redirect URL, and reward config.
+- [x] Implement public form read endpoint by workspace slug/custom domain and form slug.
+- [x] Implement text testimonial submission via `SubmitTestimonialCommand`.
+- [x] Validate Cloudflare Turnstile token server-side before accepting public submissions.
+- [x] Apply rate limit: 5 submissions per IP per hour per form using Redis token bucket.
+- [x] Dispatch Hangfire jobs after submission: thank-you email, owner notification, sentiment analysis when enabled.
+- [x] Implement auto-approve rule: rating >= 4 and sentiment score > 0.4 after AI job completes.
+- [x] Add CSP headers on public collection form endpoints.
+- [x] Add integration tests for form read, valid submission, Turnstile failure, and rate limit failure.
 
 ### Phase 5: Testimonial Management
 

@@ -22,6 +22,7 @@ public class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     public CapturingAuthEmailSender AuthEmails { get; } = new();
     public FakeDnsResolver Dns { get; } = new();
     public CapturingJobScheduler Jobs { get; } = new();
+    public FakeTurnstileVerifier Turnstile { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -35,6 +36,8 @@ public class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.AddSingleton<IDnsResolver>(Dns);
             services.RemoveAll<IJobScheduler>();
             services.AddSingleton<IJobScheduler>(Jobs);
+            services.RemoveAll<ITurnstileVerifier>();
+            services.AddSingleton<ITurnstileVerifier>(Turnstile);
         });
     }
 
@@ -91,6 +94,15 @@ public sealed class FakeDnsResolver : IDnsResolver
         string host, CancellationToken cancellationToken)
         => Task.FromResult<IReadOnlyList<string>>(
             _cnames.TryGetValue(host, out var targets) ? targets : []);
+}
+
+/// <summary>Tokens listed in <see cref="FailingTokens"/> fail verification; all others pass.</summary>
+public sealed class FakeTurnstileVerifier : ITurnstileVerifier
+{
+    public HashSet<string> FailingTokens { get; } = [];
+
+    public Task<bool> VerifyAsync(string? token, string? remoteIp, CancellationToken cancellationToken)
+        => Task.FromResult(token is null || !FailingTokens.Contains(token));
 }
 
 /// <summary>Records enqueued background jobs instead of running them.</summary>
