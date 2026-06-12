@@ -1,0 +1,44 @@
+# Build outputs
+bin/
+obj/
+out/
+publish/
+
+# .NET tooling
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+project.lock.json
+artifacts/
+
+# Test results & coverage
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# Local secrets & config overrides
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+
+# EF Core
+*.edmx.diagram
+
+# Docker local overrides & volumes
+docker-compose.override.yml
+.data/
+
+# Rider / ReSharper
+.idea/
+*.DotSettings.user
+
+# StyleCop / analyzers cache
+StyleCopReport.xml
+*.stylecop

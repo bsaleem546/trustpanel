@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrustPanel — Product Blueprint (ASP.NET Core)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --bg4: #22222f;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e8f0;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --accent: #7c6af7;
+    --accent2: #a594f9;
+    --accent3: #c4b5fd;
+    --green: #34d399;
+    --green-bg: rgba(52,211,153,0.08);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251,191,36,0.08);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.08);
+    --blue: #60a5fa;
+    --blue-bg: rgba(96,165,250,0.08);
+    --teal: #2dd4bf;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px; -webkit-font-smoothing: antialiased; }
+  .shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--bg2); border-right: 1px solid var(--border); padding: 28px 0; display: flex; flex-direction: column; gap: 2px; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  .nav-brand { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .nav-brand h1 { font-size: 17px; font-weight: 700; color: var(--accent3); letter-spacing: -0.3px; }
+  .nav-brand p { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.8px; }
+  .nav-section { padding: 14px 20px 4px; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  nav a { display: flex; align-items: center; gap: 8px; padding: 7px 20px; font-size: 13px; color: var(--text2); text-decoration: none; border-left: 2px solid transparent; transition: all 0.15s; }
+  nav a:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  nav a.active { color: var(--accent3); border-left-color: var(--accent); background: rgba(124,106,247,0.08); }
+  nav a .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text3); flex-shrink: 0; transition: background 0.15s; }
+  nav a.active .dot { background: var(--accent); }
+  main { padding: 0; overflow: hidden; }
+  section { padding: 60px 56px; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+  .hero { background: var(--bg2); padding: 80px 56px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -120px; right: -120px; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(124,106,247,0.12) 0%, transparent 70%); pointer-events: none; }
+  .hero-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(124,106,247,0.12); border: 1px solid rgba(124,106,247,0.25); color: var(--accent3); padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 20px; }
+  .hero h1 { font-size: 48px; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+  .hero h1 span { color: var(--accent2); }
+  .hero p { font-size: 17px; color: var(--text2); max-width: 580px; line-height: 1.7; margin-bottom: 32px; }
+  .hero-stats { display: flex; gap: 40px; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  .stat-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; }
+  .sec-label { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); margin-bottom: 6px; line-height: 1.25; }
+  .sec-sub { font-size: 15px; color: var(--text2); margin-bottom: 36px; max-width: 560px; line-height: 1.6; }
+  .tbl-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; background: var(--bg3); border-bottom: 1px solid var(--border); }
+  tbody td { padding: 13px 16px; font-size: 13px; color: var(--text2); border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,0.02); }
+  .td-name { font-weight: 600; color: var(--text); font-family: var(--mono); font-size: 12px; }
+  .td-price { color: var(--accent3); font-weight: 600; font-size: 13px; }
+  .td-gap { color: var(--red); font-size: 12px; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; transition: border-color 0.2s, transform 0.15s; }
+  .card:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 14px; }
+  .card h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .card p { font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .card-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 100px; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-purple { background: rgba(124,106,247,0.15); color: var(--accent3); }
+  .badge-green  { background: var(--green-bg); color: var(--green); }
+  .badge-amber  { background: var(--amber-bg); color: var(--amber); }
+  .badge-blue   { background: var(--blue-bg); color: var(--blue); }
+  .badge-red    { background: var(--red-bg); color: var(--red); }
+  .badge-teal   { background: rgba(45,212,191,0.1); color: var(--teal); }
+  pre { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; overflow-x: auto; font-family: var(--mono); font-size: 12px; line-height: 1.7; color: #c4c4d4; }
+  .code-label { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .hl-green { color: var(--green); } .hl-amber { color: var(--amber); } .hl-blue { color: var(--blue); }
+  .hl-purple { color: var(--accent2); } .hl-red { color: var(--red); } .hl-teal { color: var(--teal); }
+  .hl-gray { color: var(--text3); } .hl-white { color: var(--text); }
+  .arch-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; }
+  .module-list { display: flex; flex-direction: column; gap: 12px; }
+  .module-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .module-header { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; user-select: none; transition: background 0.15s; }
+  .module-header:hover { background: rgba(255,255,255,0.03); }
+  .module-num { width: 28px; height: 28px; border-radius: 6px; background: rgba(124,106,247,0.12); border: 1px solid rgba(124,106,247,0.2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--accent3); flex-shrink: 0; font-family: var(--mono); }
+  .module-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+  .module-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .module-chevron { font-size: 12px; color: var(--text3); transition: transform 0.2s; flex-shrink: 0; }
+  .module-item.open .module-chevron { transform: rotate(90deg); }
+  .module-body { display: none; padding: 0 20px 20px; border-top: 1px solid var(--border); }
+  .module-item.open .module-body { display: block; }
+  .feature-list { list-style: none; margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .feature-list li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .feature-list li::before { content: '→'; color: var(--accent); font-size: 11px; margin-top: 2px; flex-shrink: 0; }
+  .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .plan-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .plan-card.featured { border-color: rgba(124,106,247,0.4); background: rgba(124,106,247,0.05); }
+  .plan-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); }
+  .plan-price { font-size: 32px; font-weight: 700; letter-spacing: -1px; color: var(--text); line-height: 1; }
+  .plan-price span { font-size: 14px; color: var(--text3); font-weight: 400; }
+  .plan-tag { font-size: 11px; color: var(--text3); line-height: 1.4; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+  .plan-features li { font-size: 12px; color: var(--text2); display: flex; align-items: flex-start; gap: 7px; }
+  .plan-features li .chk { color: var(--green); font-size: 12px; flex-shrink: 0; }
+  .plan-features li .cross { color: var(--text3); font-size: 12px; flex-shrink: 0; }
+  .plan-mrr { font-family: var(--mono); font-size: 11px; color: var(--accent3); background: rgba(124,106,247,0.1); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(124,106,247,0.15); }
+  .roadmap { display: flex; flex-direction: column; gap: 0; }
+  .phase { display: flex; gap: 20px; padding: 0 0 32px; position: relative; }
+  .phase::before { content: ''; position: absolute; left: 15px; top: 30px; bottom: 0; width: 1px; background: var(--border); }
+  .phase:last-child::before { display: none; }
+  .phase-num { width: 32px; height: 32px; border-radius: 50%; background: var(--bg4); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--text3); flex-shrink: 0; font-family: var(--mono); position: relative; z-index: 1; }
+  .phase-num.active { background: rgba(124,106,247,0.15); border-color: rgba(124,106,247,0.35); color: var(--accent3); }
+  .phase-content { flex: 1; }
+  .phase-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .phase-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .phase-weeks { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .phase-items { font-size: 12px; color: var(--text2); line-height: 1.8; }
+  .checklist { display: flex; flex-direction: column; gap: 6px; }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; color: var(--text2); cursor: pointer; user-select: none; transition: border-color 0.15s; }
+  .check-item.checked { border-color: rgba(52,211,153,0.2); background: rgba(52,211,153,0.04); }
+  .check-item.checked .chk-box { background: var(--green); border-color: var(--green); color: var(--bg); }
+  .chk-box { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; transition: all 0.15s; }
+  .check-progress { font-family: var(--mono); font-size: 12px; color: var(--text3); margin-bottom: 12px; }
+  .check-progress span { color: var(--green); }
+  .schema-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .schema-table { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .schema-header { background: rgba(124,106,247,0.1); border-bottom: 1px solid rgba(124,106,247,0.15); padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--accent3); font-family: var(--mono); display: flex; align-items: center; gap: 6px; }
+  .schema-row { padding: 7px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 11px; }
+  .schema-row:last-child { border-bottom: none; }
+  .field-name { color: var(--text); font-family: var(--mono); flex: 1; }
+  .field-type { color: var(--blue); font-family: var(--mono); font-size: 10px; }
+  .field-key { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .key-pk { background: rgba(251,191,36,0.15); color: var(--amber); }
+  .key-fk { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .stack-group { margin-bottom: 32px; }
+  .stack-group-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .stack-items { display: flex; flex-direction: column; gap: 8px; }
+  .stack-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); }
+  .stack-name { font-size: 13px; font-weight: 600; color: var(--text); font-family: var(--mono); min-width: 220px; }
+  .stack-reason { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .calc-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; }
+  .calc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .calc-field label { display: block; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+  .calc-field input[type=range] { width: 100%; accent-color: var(--accent); }
+  .calc-field .val { display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: var(--text2); font-family: var(--mono); }
+  .calc-field .val span { color: var(--accent3); font-weight: 600; }
+  .calc-result { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .calc-card { background: var(--bg4); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+  .calc-card .num { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  .calc-card .lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+  .calc-card.highlight { border-color: rgba(52,211,153,0.25); background: rgba(52,211,153,0.05); }
+  .calc-card.highlight .num { color: var(--green); }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    nav { position: static; height: auto; }
+    section { padding: 40px 24px; }
+    .hero { padding: 48px 24px; }
+    .hero h1 { font-size: 32px; }
+    .pricing-grid { grid-template-columns: repeat(2,1fr); }
+    .calc-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav id="sidebar">
+  <div class="nav-brand">
+    <h1>TrustPanel</h1>
+    <p>ASP.NET Core Blueprint</p>
+  </div>
+  <div class="nav-section">Overview</div>
+  <a href="#hero" class="active"><span class="dot"></span>Introduction</a>
+  <a href="#market"><span class="dot"></span>Market Analysis</a>
+  <a href="#differentiation"><span class="dot"></span>Differentiation</a>
+  <div class="nav-section">Architecture</div>
+  <a href="#tech-stack"><span class="dot"></span>Tech Stack</a>
+  <a href="#arch-diagram"><span class="dot"></span>System Architecture</a>
+  <a href="#database"><span class="dot"></span>Database Schema</a>
+  <div class="nav-section">Product</div>
+  <a href="#modules"><span class="dot"></span>All 12 Modules</a>
+  <a href="#widget"><span class="dot"></span>Widget Architecture</a>
+  <a href="#security"><span class="dot"></span>Security Checklist</a>
+  <div class="nav-section">Business</div>
+  <a href="#pricing"><span class="dot"></span>Pricing Tiers</a>
+  <a href="#calculator"><span class="dot"></span>Revenue Calculator</a>
+  <a href="#roadmap"><span class="dot"></span>Build Roadmap</a>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-tag">⬛ ASP.NET Core Blueprint</div>
+  <h1>Build <span>TrustPanel</span><br>on .NET — and sell it</h1>
+  <p>White-label-first testimonial SaaS. ASP.NET Core 8 backend, React + TypeScript frontend. Full stack, full modules, no hand-waving.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-value">12</div><div class="stat-label">Modules</div></div>
+    <div class="stat"><div class="stat-value">$29–$199</div><div class="stat-label">Price Range</div></div>
+    <div class="stat"><div class="stat-value">.NET 8</div><div class="stat-label">Backend</div></div>
+    <div class="stat"><div class="stat-value">React+TS</div><div class="stat-label">Frontend</div></div>
+  </div>
+</section>
+
+<!-- MARKET -->
+<section id="market">
+  <div class="sec-label">Market Analysis</div>
+  <h2>Competitor landscape</h2>
+  <p class="sec-sub">Every major player is too expensive, missing white-label, or broken at video + imports.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Tool</th><th>Price</th><th>Core gap</th><th>White-label</th></tr></thead>
+      <tbody>
+        <tr><td class="td-name">Testimonial.to</td><td class="td-price">$50/mo</td><td class="td-gap">No AI, no bulk import, only 17 sources</td><td><span class="card-badge badge-red">None</span></td></tr>
+        <tr><td class="td-name">Senja.io</td><td class="td-price">$16/mo</td><td class="td-gap">No agency mode, feature bloat</td><td><span class="card-badge badge-red">None</span></td></tr>
+        <tr><td class="td-name">StoryPrompt</td><td class="td-price">$39/mo</td><td class="td-gap">Video-only, Zapier required at $79/mo</td><td><span class="card-badge badge-red">None</span></td></tr>
+        <tr><td class="td-name">Bonjoro</td><td class="td-price">$29/mo</td><td class="td-gap">Limited embeds, zero import capability</td><td><span class="card-badge badge-red">None</span></td></tr>
+        <tr><td class="td-name">Endorsal</td><td class="td-price">$29/mo</td><td class="td-gap">2,500 visitor cap, max 10 videos</td><td><span class="card-badge badge-red">None</span></td></tr>
+        <tr><td class="td-name">Socialjuice</td><td class="td-price">$69/mo eff.</td><td class="td-gap">No custom domain below top tier</td><td><span class="card-badge badge-amber">Enterprise only</span></td></tr>
+        <tr style="background:rgba(52,211,153,0.03)">
+          <td class="td-name" style="color:var(--green)">TrustPanel</td>
+          <td class="td-price" style="color:var(--green)">$29–$199/mo</td>
+          <td style="color:var(--green);font-size:12px">White-label default. Agency-ready. AI included.</td>
+          <td><span class="card-badge badge-green">Built-in</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- DIFFERENTIATION -->
+<section id="differentiation">
+  <div class="sec-label">Differentiation</div>
+  <h2>Why this wins</h2>
+  <p class="sec-sub">Nobody built white-label-first for agencies. Every competitor treats it as a $199 enterprise add-on.</p>
+  <div class="card-grid">
+    <div class="card"><div class="card-icon" style="background:rgba(124,106,247,0.12)">🏷️</div><h3>White-label by default</h3><p>Custom domain, brand removal, custom sender email — included in Agency plan, not a bolt-on enterprise upsell.</p><span class="card-badge badge-purple">Core feature</span></div>
+    <div class="card"><div class="card-icon" style="background:var(--green-bg)">🏢</div><h3>Agency mode</h3><p>One account, multiple client workspaces. Each isolated. Each brandable. LTV per agency = 5–20x a direct account.</p><span class="card-badge badge-green">Revenue driver</span></div>
+    <div class="card"><div class="card-icon" style="background:var(--blue-bg)">🧠</div><h3>AI at every layer</h3><p>Sentiment on every submission. Smart auto-approve. Highlight extraction. Insights reports. All queued, never blocking.</p><span class="card-badge badge-blue">Claude API</span></div>
+    <div class="card"><div class="card-icon" style="background:var(--amber-bg)">📹</div><h3>In-browser video</h3><p>MediaRecorder API. No plugins. Chunk upload to R2. FFmpeg sidecar handles trim, compress, thumbnail generation.</p><span class="card-badge badge-amber">Self-hosted</span></div>
+    <div class="card"><div class="card-icon" style="background:rgba(45,212,191,0.1)">🔌</div><h3>Public REST API</h3><p>Headless access. Post-purchase webhook from your own product triggers collection automatically without manual emails.</p><span class="card-badge badge-teal">API-first</span></div>
+    <div class="card"><div class="card-icon" style="background:var(--red-bg)">🛡️</div><h3>Shadow DOM widgets</h3><p>Embed snippet renders in an isolated shadow root. Host site CSS cannot break the widget. Works on any CMS.</p><span class="card-badge badge-red">Zero conflicts</span></div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="tech-stack">
+  <div class="sec-label">Tech Stack</div>
+  <h2>Every tool, with a reason</h2>
+  <p class="sec-sub">ASP.NET Core 8 minimal API backend. React 18 + TypeScript frontend. Containerised with Docker.</p>
+
+  <div class="stack-group">
+    <div class="stack-group-title">Backend — ASP.NET Core 8</div>
+    <div class="stack-items">
+      <div class="stack-item"><div class="stack-name">ASP.NET Core 8 Minimal API</div><div class="stack-reason">Fastest .NET HTTP layer. Minimal API removes controller boilerplate — route handlers as lambdas, clean and testable.</div></div>
+      <div class="stack-item"><div class="stack-name">Entity Framework Core 8</div><div class="stack-reason">ORM with code-first migrations. Strongly typed queries, owned entities for JSONB columns, global query filters for workspace_id scoping.</div></div>
+      <div class="stack-item"><div class="stack-name">MediatR</div><div class="stack-reason">CQRS pattern — Commands and Queries as classes. Separates HTTP layer from business logic. Makes unit testing trivial.</div></div>
+      <div class="stack-item"><div class="stack-name">FluentValidation</div><div class="stack-reason">Declarative request validation. Plug into MediatR pipeline via behaviour. Keeps handlers clean.</div></div>
+      <div class="stack-item"><div class="stack-name">Hangfire</div><div class="stack-reason">Background jobs + recurring tasks (email sends, sentiment analysis, import sync, nightly analytics aggregation). Dashboard included. Redis or PostgreSQL backend.</div></div>
+      <div class="stack-item"><div class="stack-name">Stripe.net</div><div class="stack-reason">Official .NET Stripe SDK. Subscription management, webhooks, customer portal — all handled.</div></div>
+      <div class="stack-item"><div class="stack-name">Resend SDK (.NET)</div><div class="stack-reason">Transactional email. Modern API, delivery webhooks, cleaner DX than SendGrid at this scale.</div></div>
+      <div class="stack-item"><div class="stack-name">Meilisearch .NET client</div><div class="stack-reason">Full-text testimonial search. Self-hosted, zero per-query cost. EF Core save hooks update the search index.</div></div>
+      <div class="stack-item"><div class="stack-name">Anthropic .NET SDK</div><div class="stack-reason">Claude API calls for sentiment, highlight extraction, and insights. All invoked from Hangfire background jobs — never on the request path.</div></div>
+      <div class="stack-item"><div class="stack-name">Scalar / Swashbuckle</div><div class="stack-reason">Auto-generated OpenAPI docs from Minimal API route definitions. Scalar gives a modern interactive UI over Swagger.</div></div>
+    </div>
+  </div>
+
+  <div class="stack-group">
+    <div class="stack-group-title">Frontend</div>
+    <div class="stack-items">
+      <div class="stack-item"><div class="stack-name">React 18 + TypeScript</div><div class="stack-reason">Component model, strong ecosystem. Types generated from OpenAPI spec via openapi-typescript for zero API drift.</div></div>
+      <div class="stack-item"><div class="stack-name">Vite</div><div class="stack-reason">Sub-100ms HMR. Build tooling that stays out of your way.</div></div>
+      <div class="stack-item"><div class="stack-name">Tailwind CSS + shadcn/ui</div><div class="stack-reason">shadcn gives accessible, unstyled primitives you own — no library lock-in.</div></div>
+      <div class="stack-item"><div class="stack-name">TanStack Query</div><div class="stack-reason">Server state, background refetch, optimistic updates. Pair with the generated API client.</div></div>
+      <div class="stack-item"><div class="stack-name">React Hook Form + Zod</div><div class="stack-reason">Schema-driven validation. Zod schemas map 1:1 to your OpenAPI response shapes.</div></div>
+      <div class="stack-item"><div class="stack-name">Recharts</div><div class="stack-reason">Analytics charts. Composable, lightweight, no proprietary charting nonsense.</div></div>
+    </div>
+  </div>
+
+  <div class="stack-group">
+    <div class="stack-group-title">Infrastructure & Storage</div>
+    <div class="stack-items">
+      <div class="stack-item"><div class="stack-name">PostgreSQL 15</div><div class="stack-reason">Primary store. EF Core owns migrations. JSONB columns for widget settings, form question config.</div></div>
+      <div class="stack-item"><div class="stack-name">Redis (StackExchange.Redis)</div><div class="stack-reason">Distributed cache, Hangfire queue backend, rate limiting (token bucket via RedisRateLimiter), session store.</div></div>
+      <div class="stack-item"><div class="stack-name">Cloudflare R2</div><div class="stack-reason">S3-compatible. AWSSDK.S3 works against it. Zero egress fees — critical for high-volume video serving.</div></div>
+      <div class="stack-item"><div class="stack-name">Cloudflare CDN</div><div class="stack-reason">Widget JS and API responses served from edge. 60s TTL on widget data = zero origin hits on popular sites.</div></div>
+      <div class="stack-item"><div class="stack-name">FFmpeg (Docker sidecar)</div><div class="stack-reason">Trim, compress, thumbnail generation triggered by Hangfire jobs via Process.Start or Xabe.FFmpeg wrapper.</div></div>
+      <div class="stack-item"><div class="stack-name">Docker + Nginx</div><div class="stack-reason">Same Contabo VPS setup you know. Nginx reverse proxy in front of Kestrel. Certbot for SSL.</div></div>
+    </div>
+  </div>
+
+  <div class="stack-group">
+    <div class="stack-group-title">Auth</div>
+    <div class="stack-items">
+      <div class="stack-item"><div class="stack-name">ASP.NET Core Identity</div><div class="stack-reason">Built-in user management, password hashing, email confirmation, roles. No third-party auth dependency.</div></div>
+      <div class="stack-item"><div class="stack-name">JWT Bearer tokens</div><div class="stack-reason">Stateless auth for API and widget endpoints. Short-lived access tokens (15 min) + refresh tokens (30 days) in httpOnly cookies.</div></div>
+      <div class="stack-item"><div class="stack-name">AspNet.Security.OAuth (Google)</div><div class="stack-reason">Google OAuth provider via ASP.NET Core OAuth middleware. One-package addition.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCH DIAGRAM -->
+<section id="arch-diagram">
+  <div class="sec-label">System Architecture</div>
+  <h2>Request flow</h2>
+  <p class="sec-sub">Three entry points converge through Cloudflare. Kestrel handles HTTP. Hangfire handles everything async.</p>
+  <div class="arch-box">
+    <div class="code-label" style="margin-bottom:16px">Full system diagram</div>
+    <pre style="font-size:11px;line-height:1.8"><span class="hl-gray">┌──────────────────────────────────────────────────────────────┐</span>
+<span class="hl-gray">│              CUSTOMER'S WEBSITE (any CMS)                    │</span>
+<span class="hl-gray">│  </span><span class="hl-green">&lt;script src="cdn.trustpanel.com/widget.js?id=WIDGET_ID"&gt;</span>     <span class="hl-gray">│</span>
+<span class="hl-gray">│  └── Shadow DOM Widget (Carousel / Grid / Popup / Badge)     │</span>
+<span class="hl-gray">└──────────────────────────┬───────────────────────────────────┘</span>
+                           <span class="hl-gray">│ HTTPS</span>
+                           <span class="hl-gray">▼</span>
+<span class="hl-gray">┌──────────────────────────────────────────────────────────────┐</span>
+<span class="hl-amber">│                  CLOUDFLARE (CDN + WAF)                      │</span>
+<span class="hl-gray">│  Serve widget.js (edge cached) · Cache widget API (60s TTL) │</span>
+<span class="hl-gray">│  Rate limit submissions · DDoS protection                    │</span>
+<span class="hl-gray">└──────────────────┬──────────────────────────────────────────┘</span>
+                   <span class="hl-gray">│</span>
+       <span class="hl-gray">┌───────────┴───────────┐</span>
+       <span class="hl-gray">▼                       ▼</span>
+<span class="hl-blue">┌─────────────┐    ┌──────────────────────┐</span>
+<span class="hl-blue">│  NGINX/SSL  │    │ PUBLIC FORM (React)  │</span>
+<span class="hl-gray">│  Rev. Proxy │    │  /collect/:slug      │</span>
+<span class="hl-gray">└──────┬──────┘    └──────────┬───────────┘</span>
+       <span class="hl-gray">│                       │</span>
+       <span class="hl-gray">▼                       ▼</span>
+<span class="hl-gray">┌──────────────────────────────────────────────────────────────┐</span>
+<span class="hl-purple">│           ASP.NET CORE 8 — MINIMAL API (Kestrel)             │</span>
+<span class="hl-gray">│                                                              │</span>
+<span class="hl-gray">│  /api/public/*     → widget reads, form submissions         │</span>
+<span class="hl-gray">│  /api/auth/*       → login, register, refresh token        │</span>
+<span class="hl-gray">│  /api/workspace/*  → full dashboard API (JWT required)     │</span>
+<span class="hl-gray">│  /api/admin/*      → super-admin (role-gated)              │</span>
+<span class="hl-gray">│  /hangfire         → job dashboard (admin-only)            │</span>
+<span class="hl-gray">│                                                              │</span>
+<span class="hl-gray">│  MediatR pipeline: Validate → Authorize → Handle → Map     │</span>
+<span class="hl-gray">│  Hangfire jobs: sentiment · video · email · imports        │</span>
+<span class="hl-gray">└────────────────────┬─────────────────────────────────────────┘</span>
+         <span class="hl-gray">│              │              │</span>
+         <span class="hl-gray">▼              ▼              ▼</span>
+<span class="hl-green">┌───────────┐  ┌──────────────┐  ┌──────────────┐</span>
+<span class="hl-green">│ PostgreSQL │  │    Redis     │  │      R2      │</span>
+<span class="hl-gray">│  EF Core  │  │ Hangfire/    │  │ video+images │</span>
+<span class="hl-gray">│  primary  │  │ cache/rate   │  │ AWS SDK v3   │</span>
+<span class="hl-green">└───────────┘  └──────────────┘  └──────────────┘</span>
+<span class="hl-gray">       + Meilisearch (search)  + FFmpeg (video)</span></pre>
+  </div>
+</section>
+
+<!-- PROJECT STRUCTURE -->
+<section id="database">
+  <div class="sec-label">Project Structure & Schema</div>
+  <h2>Solution layout + core tables</h2>
+  <p class="sec-sub">Clean Architecture. Domain is framework-free. Infrastructure owns EF Core and external services.</p>
+
+  <div class="code-label" style="margin-bottom:8px">Solution structure</div>
+  <pre style="margin-bottom:28px"><span class="hl-purple">TrustPanel.sln</span>
+├── <span class="hl-blue">src/</span>
+│   ├── <span class="hl-green">TrustPanel.Api</span>           <span class="hl-gray">— Minimal API endpoints, Program.cs, middleware</span>
+│   ├── <span class="hl-green">TrustPanel.Application</span>   <span class="hl-gray">— MediatR Commands/Queries, DTOs, interfaces</span>
+│   ├── <span class="hl-green">TrustPanel.Domain</span>        <span class="hl-gray">— Entities, value objects, domain events (no deps)</span>
+│   ├── <span class="hl-green">TrustPanel.Infrastructure</span> <span class="hl-gray">— EF Core, Hangfire, Stripe, Resend, R2, Meilisearch</span>
+│   └── <span class="hl-amber">TrustPanel.Widget</span>        <span class="hl-gray">— Vanilla TS widget (separate Vite project)</span>
+└── <span class="hl-blue">tests/</span>
+    ├── <span class="hl-teal">TrustPanel.UnitTests</span>      <span class="hl-gray">— xUnit, Domain + Application layer</span>
+    └── <span class="hl-teal">TrustPanel.IntegrationTests</span> <span class="hl-gray">— WebApplicationFactory, Testcontainers (Postgres/Redis)</span></pre>
+
+  <div class="schema-grid">
+    <div class="schema-table">
+      <div class="schema-header"><span class="icon">👤</span>Users</div>
+      <div class="schema-row"><span class="field-name">Id</span><span class="field-type">Guid</span><span class="field-key key-pk">PK</span></div>
+      <div class="schema-row"><span class="field-name">Email</span><span class="field-type">string</span></div>
+      <div class="schema-row"><span class="field-name">PlanId</span><span class="field-type">Guid</span><span class="field-key key-fk">FK</span></div>
+      <div class="schema-row"><span class="field-name">StripeCustomerId</span><span class="field-type">string</span></div>
+      <div class="schema-row"><span class="field-name">Role</span><span class="field-type">enum</span></div>
+    </div>
+    <div class="schema-table">
+      <div class="schema-header"><span class="icon">🏢</span>Workspaces</div>
+      <div class="schema-row"><span class="field-name">Id</span><span class="field-type">Guid</span><span class="field-key key-pk">PK</span></div>
+      <div class="schema-row"><span class="field-name">UserId</span><span class="field-type">Guid</span><span class="field-key key-fk">FK</span></div>
+      <div class="schema-row"><span class="field-name">Slug</span><span class="field-type">string</span></div>
+      <div class="schema-row"><span class="field-name">CustomDomain</span><span class="field-type">string?</span></div>
+      <div class="schema-row"><span class="field-name">Branding</span><span class="field-type">jsonb (owned)</span></div>
+      <div class="schema-row"><span class="field-name">EmailFrom</span><span class="field-type">jsonb (owned)</span></div>
+    </div>
+    <div class="schema-table">
+      <div class="schema-header"><span class="icon">📝</span>Testimonials</div>
+      <div class="schema-row"><span class="field-name">Id</span><span class="field-type">Guid</span><span class="field-key key-pk">PK</span></div>
+      <div class="schema-row"><span class="field-name">WorkspaceId</span><span class="field-type">Guid</span><span class="field-key key-fk">FK</span></div>
+      <div class="schema-row"><span class="field-name">Type</span><span class="field-type">enum Text|Video</span></div>
+      <div class="schema-row"><span class="field-name">Content</span><span class="field-type">string?</span></div>
+      <div class="schema-row"><span class="field-name">VideoPath</span><span class="field-type">string?</span></div>
+      <div class="schema-row"><span class="field-name">Rating</span><span class="field-type">int 1-5</span></div>
+      <div class="schema-row"><span class="field-name">Status</span><span class="field-type">enum</span></div>
+      <div class="schema-row"><span class="field-name">SentimentScore</span><span class="field-type">float?</span></div>
+      <div class="schema-row"><span class="field-name">Source</span><span class="field-type">enum</span></div>
+    </div>
+    <div class="schema-table">
+      <div class="schema-header"><span class="icon">🎨</span>Widgets</div>
+      <div class="schema-row"><span class="field-name">Id</span><span class="field-type">Guid</span><span class="field-key key-pk">PK</span></div>
+      <div class="schema-row"><span class="field-name">WorkspaceId</span><span class="field-type">Guid</span><span class="field-key key-fk">FK</span></div>
+      <div class="schema-row"><span class="field-name">Type</span><span class="field-type">enum 6 types</span></div>
+      <div class="schema-row"><span class="field-name">FilterTags</span><span class="field-type">string[]</span></div>
+      <div class="schema-row"><span class="field-name">Settings</span><span class="field-type">jsonb (owned)</span></div>
+      <div class="schema-row"><span class="field-name">CustomCss</span><span class="field-type">string?</span></div>
+    </div>
+    <div class="schema-table">
+      <div class="schema-header"><span class="icon">📊</span>WidgetEvents</div>
+      <div class="schema-row"><span class="field-name">Id</span><span class="field-type">long</span><span class="field-key key-pk">PK</span></div>
+      <div class="schema-row"><span class="field-name">WidgetId</span><span class="field-type">Guid</span><span class="field-key key-fk">FK</span></div>
+      <div class="schema-row"><span class="field-name">Event</span><span class="field-type">enum View|Click</span></div>
+      <div class="schema-row"><span class="field-name">Country</span><span class="field-type">char(2)?</span></div>
+      <div class="schema-row"><span class="field-name">Device</span><span class="field-type">enum</span></div>
+      <div class="schema-row"><span class="field-name">Referrer</span><span class="field-type">string?</span></div>
+    </div>
+    <div class="schema-table">
+      <div class="schema-header"><span class="icon">💳</span>Subscriptions</div>
+      <div class="schema-row"><span class="field-name">Id</span><span class="field-type">Guid</span><span class="field-key key-pk">PK</span></div>
+      <div class="schema-row"><span class="field-name">UserId</span><span class="field-type">Guid</span><span class="field-key key-fk">FK</span></div>
+      <div class="schema-row"><span class="field-name">StripeSubId</span><span class="field-type">string</span></div>
+      <div class="schema-row"><span class="field-name">PlanId</span><span class="field-type">Guid</span><span class="field-key key-fk">FK</span></div>
+      <div class="schema-row"><span class="field-name">Status</span><span class="field-type">enum</span></div>
+      <div class="schema-row"><span class="field-name">CancelAtPeriodEnd</span><span class="field-type">bool</span></div>
+    </div>
+  </div>
+
+  <div class="code-label" style="margin-top:28px;margin-bottom:8px">Global query filter (workspace isolation)</div>
+  <pre><span class="hl-gray">// AppDbContext.cs — every query auto-scoped to current workspace</span>
+<span class="hl-blue">protected override void</span> <span class="hl-white">OnModelCreating</span>(<span class="hl-green">ModelBuilder</span> builder)
+{
+    builder.Entity&lt;<span class="hl-green">Testimonial</span>&gt;()
+        .HasQueryFilter(t =&gt; t.WorkspaceId == <span class="hl-amber">_currentWorkspaceId</span>);
+
+    builder.Entity&lt;<span class="hl-green">Widget</span>&gt;()
+        .HasQueryFilter(w =&gt; w.WorkspaceId == <span class="hl-amber">_currentWorkspaceId</span>);
+
+    <span class="hl-gray">// Owned entities map to JSONB columns</span>
+    builder.Entity&lt;<span class="hl-green">Workspace</span>&gt;()
+        .OwnsOne(w =&gt; w.Branding, b =&gt; b.ToJson())
+        .OwnsOne(w =&gt; w.EmailFrom, e =&gt; e.ToJson());
+}</pre>
+</section>
+
+<!-- MODULES -->
+<section id="modules">
+  <div class="sec-label">Product Modules</div>
+  <h2>All 12 modules</h2>
+  <p class="sec-sub">Click any module to expand its full feature list and .NET implementation notes.</p>
+  <div class="module-list">
+
+    <div class="module-item open">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">01</div>
+        <div class="module-title">Auth & Onboarding</div>
+        <div class="module-tags"><span class="card-badge badge-green">Phase 1</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>Email + password via ASP.NET Core Identity. Email confirmation on register.</li>
+          <li>Google OAuth via AspNet.Security.OAuth — single middleware line in Program.cs</li>
+          <li>JWT access token (15 min) + refresh token (30 days) in httpOnly cookie</li>
+          <li>14-day full trial, no credit card required at signup</li>
+          <li>Multi-step onboarding: workspace name → logo → first form template → embed snippet</li>
+          <li>Active session list per user (RefreshTokens table), revoke by session ID</li>
+          <li>Password reset via DataProtectionTokenProvider signed token (60 min expiry)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">02</div>
+        <div class="module-title">Workspace & White-Label</div>
+        <div class="module-tags"><span class="card-badge badge-purple">Revenue driver</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>Multiple workspaces per account. Plan limits enforced via middleware.</li>
+          <li>Custom domain per workspace with CNAME DNS verification + auto-SSL (Certbot / Cloudflare)</li>
+          <li>Full brand customization stored as owned JSONB entity on Workspace: logo, colors, font, email sender</li>
+          <li>Remove all TrustPanel branding from forms and widgets on Agency plan</li>
+          <li>Custom domain routing: middleware resolves workspace from request Host header before hitting the handler</li>
+          <li>Hangfire recurring job checks DNS CNAME propagation and sets DomainVerifiedAt timestamp</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">03</div>
+        <div class="module-title">Testimonial Collection Forms</div>
+        <div class="module-tags"><span class="card-badge badge-green">Phase 1</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>Form builder: toggle which questions to show (rating, name, title, company, avatar)</li>
+          <li>Allowed types: text-only, video-only, or both per form</li>
+          <li>Multi-step form flow: rating → submission → custom thank-you + redirect URL</li>
+          <li>Post-submission reward: discount code or downloadable file link</li>
+          <li>Email request flow: single address, CSV bulk upload, one automated follow-up reminder</li>
+          <li>In-browser video via MediaRecorder API — no plugins. Chunk upload via pre-signed R2 URL (AWSSDK.S3). Video never routes through Kestrel.</li>
+          <li>Cloudflare Turnstile for invisible bot protection — server-side validation in the handler</li>
+          <li>.NET 8 RateLimiter middleware: 5 submissions per IP per hour per form (token bucket)</li>
+          <li>Submission dispatches SubmitTestimonialCommand → MediatR handler → Hangfire jobs (email, sentiment)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">04</div>
+        <div class="module-title">Testimonial Management Dashboard</div>
+        <div class="module-tags"><span class="card-badge badge-green">Phase 1</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>Inbox with all pending testimonials requiring review</li>
+          <li>Bulk approve, reject, feature, tag, delete via batch command endpoints</li>
+          <li>Edit submitter name, title, company. Edit text content (logged as EditedAt in audit table).</li>
+          <li>Video trim via Hangfire job calling Xabe.FFmpeg (wrapper around FFmpeg sidecar container)</li>
+          <li>Smart auto-approve rule: if Rating ≥ 4 AND SentimentScore > 0.4, skip inbox</li>
+          <li>Import sources: Twitter/X, Google Business Profile, G2, Trustpilot, CSV. Each as a Hangfire recurring job per ImportSource record.</li>
+          <li>Full-text search via Meilisearch .NET client. Index updated in EF Core SaveChanges interceptor.</li>
+          <li>Audit trail via AuditLog entity appended in MediatR post-processor pipeline behaviour</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">05</div>
+        <div class="module-title">AI Features (Claude API)</div>
+        <div class="module-tags"><span class="card-badge badge-blue">Phase 2</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>Sentiment analysis on every new testimonial — dispatched as Hangfire job from submission handler</li>
+          <li>AI-drafted thank-you reply suggestions for workspace owners</li>
+          <li>Testimonial Insights: common themes in positive and negative feedback, recurring language patterns</li>
+          <li>Highlight extraction: Claude identifies the strongest single sentence from long text testimonials</li>
+          <li>AI-assisted import filtering: scores relevance of bulk imports, removes noise before saving</li>
+          <li>claude-haiku-3-5 for per-testimonial sentiment via Anthropic .NET SDK (cost-efficient at volume)</li>
+          <li>claude-sonnet-4-6 for insights reports — Hangfire cron job, results cached in Redis 24h</li>
+          <li>All AI calls in Hangfire background jobs — zero impact on request latency</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">06</div>
+        <div class="module-title">Widget Builder & Display</div>
+        <div class="module-tags"><span class="card-badge badge-green">Phase 1–2</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>6 widget types: Carousel, Masonry Grid / Wall of Love, Badge, Popup, Slider, Single Featured Card</li>
+          <li>Live visual customizer: card style, colors, font size, animation, dark mode variant</li>
+          <li>Per-widget filter: by tag, minimum rating, featured-only, cherry-picked IDs, source platform</li>
+          <li>Custom CSS field per widget for advanced users</li>
+          <li>JS embed snippet (Shadow DOM) + iframe fallback. Widget data endpoint returns minimal JSON.</li>
+          <li>Widget JS: vanilla TypeScript, ~15KB minified, compiled via separate Vite project</li>
+          <li>Widget data endpoint: GET /api/public/widget/{id} — response cached in Redis (IDistributedCache) + Cloudflare 60s TTL. Cache busted on widget save via cache key deletion.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">07</div>
+        <div class="module-title">Analytics</div>
+        <div class="module-tags"><span class="card-badge badge-blue">Phase 2</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>Form analytics: visit → submission conversion rate, submissions over time, average rating trend</li>
+          <li>Widget analytics: impressions, click-through rate, per-testimonial engagement, device, country</li>
+          <li>Widget JS fires navigator.sendBeacon to POST /api/public/events — non-blocking fire-and-forget</li>
+          <li>Event endpoint: minimal handler, no auth, appends to WidgetEvents table via raw SQL INSERT (no EF Core overhead)</li>
+          <li>Hangfire nightly job aggregates raw events into WidgetAnalyticsDaily summary table</li>
+          <li>Dashboard reads summary table. Last 24h reads raw table with LIMIT.</li>
+          <li>Export all data to CSV via streaming response (no memory buffer for large datasets)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">08</div>
+        <div class="module-title">Email System</div>
+        <div class="module-tags"><span class="card-badge badge-green">Phase 1</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>5 built-in templates: request, follow-up, thank-you, new testimonial notification, weekly digest</li>
+          <li>Razor-based email templates rendered via RazorLight (off-host, no MVC dependency)</li>
+          <li>Merge tags in templates: submitter name, form link, workspace name, custom fields</li>
+          <li>Custom sender name and address per workspace (white-label)</li>
+          <li>Resend .NET SDK for delivery. Resend webhook endpoint updates EmailLog delivery status.</li>
+          <li>Unsubscribe: one-click signed URL token, stored in EmailSuppression table, checked pre-send</li>
+          <li>Max 3 emails per submitter address per 30 days — Redis counter with TTL</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">09</div>
+        <div class="module-title">Team & Permissions</div>
+        <div class="module-tags"><span class="card-badge badge-purple">Phase 3</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>Invite team members by email with 7-day expiring signed invitation URL</li>
+          <li>3 roles per workspace: Owner (full + billing + delete), Admin (manage all), Viewer (read-only)</li>
+          <li>Authorization via custom IAuthorizationHandler checking WorkspaceMember record + role</li>
+          <li>Policy-based authorization applied to MediatR handlers via pipeline behaviour</li>
+          <li>Activity log appended by MediatR post-processor on every write command</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">10</div>
+        <div class="module-title">Public REST API</div>
+        <div class="module-tags"><span class="card-badge badge-purple">Phase 3</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>GET /api/v1/testimonials — list approved (filterable), GET single, POST create programmatically</li>
+          <li>Outbound webhook: HttpClient posts approved testimonial payload to workspace's registered URLs</li>
+          <li>API key management: create, name, revoke per workspace. Keys stored SHA-256 hashed.</li>
+          <li>API key auth via custom IAuthenticationHandler — reads Authorization: Bearer header, validates hash</li>
+          <li>Rate limit: 1,000 req/hour per key via Redis token bucket (.NET 8 RateLimiter + Redis)</li>
+          <li>OpenAPI docs auto-generated from Minimal API routes via Scalar — no manual maintenance</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">11</div>
+        <div class="module-title">Billing & Subscriptions</div>
+        <div class="module-tags"><span class="card-badge badge-green">Phase 1</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>4 plans: Starter $29, Pro $59, Agency $119, Agency+ $199. Annual at 20% discount.</li>
+          <li>Stripe.net SDK handles subscription creation, proration, customer portal session generation</li>
+          <li>Stripe webhook endpoint validates Stripe-Signature header before processing events</li>
+          <li>Events handled: invoice.payment_succeeded/failed, customer.subscription.deleted/updated</li>
+          <li>Plan limit enforcement: CheckWorkspaceLimitsMiddleware applied to all write API groups</li>
+          <li>Restrict (not delete) on plan downgrade — data stays, new creates blocked until under limit</li>
+          <li>3-day grace period on payment failure before access restriction triggers</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="module-item">
+      <div class="module-header" onclick="toggle(this)">
+        <div class="module-num">12</div>
+        <div class="module-title">Super Admin Panel</div>
+        <div class="module-tags"><span class="card-badge badge-amber">Phase 4</span></div>
+        <div class="module-chevron">▶</div>
+      </div>
+      <div class="module-body">
+        <ul class="feature-list">
+          <li>View all users, workspaces, subscription statuses</li>
+          <li>User impersonation: issue a short-lived impersonation JWT with original admin ID in claims</li>
+          <li>Manually override plan (comps, extended trials) — writes to Subscription record, skips Stripe</li>
+          <li>Global stats: MRR from Stripe API (no local storage), active subscribers, churn rate</li>
+          <li>Email broadcast via Hangfire bulk job, filtered by plan or activity segment</li>
+          <li>Hangfire dashboard exposed at /hangfire, gated by SuperAdmin role policy</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- WIDGET -->
+<section id="widget">
+  <div class="sec-label">Widget Architecture</div>
+  <h2>The embed snippet</h2>
+  <p class="sec-sub">Vanilla TypeScript. ~15KB minified. No framework dependency. Shadow DOM isolates from host CSS.</p>
+  <div class="code-label">What customers paste (once)</div>
+  <pre style="margin-bottom:20px"><span class="hl-gray">&lt;!-- Paste once, anywhere --&gt;</span>
+<span class="hl-blue">&lt;script</span>
+  <span class="hl-green">src=</span><span class="hl-amber">"https://cdn.trustpanel.com/widget.js"</span>
+  <span class="hl-green">data-widget-id=</span><span class="hl-amber">"wgt_abc123"</span>
+  <span class="hl-green">async</span> <span class="hl-green">defer</span>
+<span class="hl-blue">&gt;&lt;/script&gt;</span>
+<span class="hl-blue">&lt;div</span> <span class="hl-green">id=</span><span class="hl-amber">"trustpanel-widget"</span><span class="hl-blue">&gt;&lt;/div&gt;</span></pre>
+  <div class="code-label">Widget module structure</div>
+  <pre><span class="hl-purple">TrustPanel.Widget/</span>  <span class="hl-gray">(separate Vite project → compiles to widget.js)</span>
+├── <span class="hl-green">bootstrap.ts</span>      <span class="hl-gray">— read data-widget-id, detect env</span>
+├── <span class="hl-green">api.ts</span>            <span class="hl-gray">— fetch /api/public/widget/{id} (CF-cached 60s)</span>
+├── <span class="hl-green">shadow-dom.ts</span>     <span class="hl-gray">— create shadow root, inject scoped styles</span>
+├── <span class="hl-amber">renderers/</span>
+│   ├── <span class="hl-blue">carousel.ts</span>
+│   ├── <span class="hl-blue">grid.ts</span>
+│   ├── <span class="hl-blue">badge.ts</span>
+│   ├── <span class="hl-blue">popup.ts</span>
+│   └── <span class="hl-blue">slider.ts</span>
+├── <span class="hl-green">analytics.ts</span>      <span class="hl-gray">— sendBeacon → POST /api/public/events</span>
+└── <span class="hl-amber">utils/</span>
+    ├── <span class="hl-teal">lazyload.ts</span>   <span class="hl-gray">— IntersectionObserver</span>
+    └── <span class="hl-teal">resize.ts</span>     <span class="hl-gray">— ResizeObserver for responsive layout</span></pre>
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+  <div class="sec-label">Security</div>
+  <h2>Security checklist</h2>
+  <p class="sec-sub">Click to mark complete as you build. All 16 required before going live.</p>
+  <div class="check-progress">Progress: <span id="progress-count">0</span> / 16 complete</div>
+  <div class="checklist" id="checklist">
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>All API route groups use .NET 8 RateLimiter middleware (per IP + per API key)</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>JWT access tokens expire in 15 minutes. Refresh tokens in httpOnly secure cookies only.</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>ANTIFORGERY protection on stateful endpoints (double-submit cookie pattern)</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>Stripe webhooks validated via Stripe-Signature header before any processing</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>API keys stored SHA-256 hashed in DB, never returned in plaintext after creation</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>Video uploads: server-side MIME type validation, max size enforced before pre-signed URL issued</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>Content Security Policy headers on collection form pages</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>Form submission rate limit: 5 per IP per hour per form via Redis token bucket</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>EF Core global query filters enforce WorkspaceId on every Testimonial and Widget query</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>Email suppression list checked in all send handlers before dispatching to Resend</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>Cloudflare Turnstile token validated server-side on form submission handler</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>No secrets in frontend build — all API keys and credentials in environment variables only</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>R2 bucket private. All file URLs are pre-signed with TTL. No public bucket access.</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>Audit log appended by MediatR post-processor on every write command, immutable</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>GDPR: data export endpoint streams submitter data as CSV. Deletion request purges testimonials + personal fields.</div>
+    <div class="check-item" onclick="checkItem(this)"><div class="chk-box">✓</div>Sentry SDK on both API project and React frontend. Errors grouped by release version.</div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="sec-label">Pricing</div>
+  <h2>4 tiers, one real target</h2>
+  <p class="sec-sub">Agency at $119 is the revenue engine. One agency with 10 client workspaces justifies Agency+ solo.</p>
+  <div class="pricing-grid">
+    <div class="plan-card">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$29<span>/mo</span></div>
+      <div class="plan-tag">1 workspace · 100 testimonials</div>
+      <ul class="plan-features">
+        <li><span class="chk">✓</span>Text testimonials</li>
+        <li><span class="chk">✓</span>2 widgets</li>
+        <li><span class="chk">✓</span>Basic analytics</li>
+        <li><span class="cross">—</span>Video recording</li>
+        <li><span class="cross">—</span>AI analysis</li>
+        <li><span class="cross">—</span>White-label</li>
+        <li><span class="cross">—</span>Custom domain</li>
+      </ul>
+      <div class="plan-mrr">Annual: $23/mo effective</div>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$59<span>/mo</span></div>
+      <div class="plan-tag">3 workspaces · unlimited testimonials</div>
+      <ul class="plan-features">
+        <li><span class="chk">✓</span>Video recording</li>
+        <li><span class="chk">✓</span>10 widgets</li>
+        <li><span class="chk">✓</span>AI sentiment analysis</li>
+        <li><span class="chk">✓</span>Import sources</li>
+        <li><span class="chk">✓</span>Full analytics</li>
+        <li><span class="cross">—</span>White-label</li>
+        <li><span class="cross">—</span>Custom domain</li>
+      </ul>
+      <div class="plan-mrr">Annual: $47/mo effective</div>
+    </div>
+    <div class="plan-card featured">
+      <div class="plan-name" style="color:var(--accent3)">Agency ⭐</div>
+      <div class="plan-price">$119<span>/mo</span></div>
+      <div class="plan-tag">10 workspaces · white-label · teams</div>
+      <ul class="plan-features">
+        <li><span class="chk">✓</span>Everything in Pro</li>
+        <li><span class="chk">✓</span>White-label branding</li>
+        <li><span class="chk">✓</span>Custom domains</li>
+        <li><span class="chk">✓</span>Team members</li>
+        <li><span class="chk">✓</span>API access + webhooks</li>
+        <li><span class="chk">✓</span>Custom email sender</li>
+      </ul>
+      <div class="plan-mrr">Annual: $95/mo effective</div>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Agency+</div>
+      <div class="plan-price">$199<span>/mo</span></div>
+      <div class="plan-tag">Unlimited workspaces · priority SLA</div>
+      <ul class="plan-features">
+        <li><span class="chk">✓</span>Everything in Agency</li>
+        <li><span class="chk">✓</span>Unlimited workspaces</li>
+        <li><span class="chk">✓</span>Priority support SLA</li>
+        <li><span class="chk">✓</span>Usage-based API plan</li>
+        <li><span class="chk">✓</span>Advanced AI insights</li>
+      </ul>
+      <div class="plan-mrr">Annual: $159/mo effective</div>
+    </div>
+  </div>
+</section>
+
+<!-- CALCULATOR -->
+<section id="calculator">
+  <div class="sec-label">Revenue Model</div>
+  <h2>MRR calculator</h2>
+  <p class="sec-sub">Slide the customer counts. Watch your monthly recurring revenue update.</p>
+  <div class="calc-box">
+    <div class="calc-row">
+      <div class="calc-field">
+        <label>Starter customers ($29)</label>
+        <input type="range" min="0" max="100" value="10" id="s1" oninput="calcMRR()">
+        <div class="val">0 <span id="v1">10</span> 100</div>
+      </div>
+      <div class="calc-field">
+        <label>Pro customers ($59)</label>
+        <input type="range" min="0" max="100" value="5" id="s2" oninput="calcMRR()">
+        <div class="val">0 <span id="v2">5</span> 100</div>
+      </div>
+      <div class="calc-field">
+        <label>Agency customers ($119)</label>
+        <input type="range" min="0" max="50" value="2" id="s3" oninput="calcMRR()">
+        <div class="val">0 <span id="v3">2</span> 50</div>
+      </div>
+    </div>
+    <div class="calc-result">
+      <div class="calc-card"><div class="num" id="mrr-starter">$290</div><div class="lbl">Starter MRR</div></div>
+      <div class="calc-card"><div class="num" id="mrr-pro">$295</div><div class="lbl">Pro MRR</div></div>
+      <div class="calc-card highlight"><div class="num" id="mrr-total">$823</div><div class="lbl">Total MRR</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="sec-label">Execution</div>
+  <h2>Build order</h2>
+  <p class="sec-sub">Ship billing in week 4. Everything else is optional until you have revenue.</p>
+  <div class="roadmap">
+    <div class="phase">
+      <div class="phase-num active">1</div>
+      <div class="phase-content">
+        <div class="phase-heading"><div class="phase-title">Core loop</div><div class="phase-weeks">Weeks 1–4</div><span class="card-badge badge-green">Ship first</span></div>
+        <div class="phase-items">ASP.NET Core Identity + JWT auth → Workspace model → Collection form (text only) → EF Core migrations → Testimonial management → Carousel + grid widget → Stripe subscriptions + CheckWorkspaceLimitsMiddleware</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">2</div>
+      <div class="phase-content">
+        <div class="phase-heading"><div class="phase-title">Value-add</div><div class="phase-weeks">Weeks 5–8</div><span class="card-badge badge-blue">Justifies Pro</span></div>
+        <div class="phase-items">In-browser video + R2 chunk upload + Hangfire FFmpeg job → Claude API sentiment via Hangfire → Badge + popup widget types → Analytics event collection + Recharts dashboard</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">3</div>
+      <div class="phase-content">
+        <div class="phase-heading"><div class="phase-title">Agency features</div><div class="phase-weeks">Weeks 9–12</div><span class="card-badge badge-purple">Justifies Agency</span></div>
+        <div class="phase-items">Multi-workspace + plan limit enforcement → Custom domain + Hangfire DNS verification job → White-label branding (JSONB owned entity) → WorkspaceMember + IAuthorizationHandler roles → API keys + outbound webhook</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">4</div>
+      <div class="phase-content">
+        <div class="phase-heading"><div class="phase-title">Growth features</div><div class="phase-weeks">Weeks 13–16</div><span class="card-badge badge-amber">Post-revenue</span></div>
+        <div class="phase-items">Import sources (Google, Twitter/X) as Hangfire recurring jobs → Claude insights report (scheduled) → Zapier outbound webhook → RazorLight email sequence builder → Quote card generator via Playwright headless</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">5</div>
+      <div class="phase-content">
+        <div class="phase-heading"><div class="phase-title">Scale</div><div class="phase-weeks">Post-MRR milestone</div><span class="card-badge badge-teal">Fund from revenue</span></div>
+        <div class="phase-items">Affiliate program → More import sources (Capterra, G2, LinkedIn) → Usage-based API plan → Migrate video to Cloudflare Stream or Mux → Dedicated Hetzner infra → Consider SignalR for real-time dashboard updates</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+function toggle(header) { header.parentElement.classList.toggle('open'); }
+function checkItem(el) {
+  el.classList.toggle('checked');
+  document.getElementById('progress-count').textContent = document.querySelectorAll('.check-item.checked').length;
+}
+function calcMRR() {
+  const s = parseInt(document.getElementById('s1').value);
+  const p = parseInt(document.getElementById('s2').value);
+  const a = parseInt(document.getElementById('s3').value);
+  document.getElementById('v1').textContent = s;
+  document.getElementById('v2').textContent = p;
+  document.getElementById('v3').textContent = a;
+  document.getElementById('mrr-starter').textContent = '$' + (s*29).toLocaleString();
+  document.getElementById('mrr-pro').textContent = '$' + (p*59).toLocaleString();
+  document.getElementById('mrr-total').textContent = '$' + (s*29 + p*59 + a*119).toLocaleString();
+}
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector('nav a[href="#' + entry.target.id + '"]');
+      if (active) active.classList.add('active');
+    }
+  });
+}, { threshold: 0.25, rootMargin: '-10% 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
