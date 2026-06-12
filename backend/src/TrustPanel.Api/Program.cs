@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using TrustPanel.Api;
 using TrustPanel.Api.HealthChecks;
@@ -40,6 +41,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+
+var dataProtection = builder.Services.AddDataProtection();
+var dataProtectionKeysPath = builder.Configuration["DATA_PROTECTION_KEYS_PATH"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+}
 
 var healthChecks = builder.Services.AddHealthChecks();
 var defaultConnectionString = builder.Configuration.GetConnectionString("Default");
