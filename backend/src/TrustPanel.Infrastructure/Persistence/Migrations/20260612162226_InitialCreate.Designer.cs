@@ -13,7 +13,7 @@ using TrustPanel.Infrastructure.Persistence;
 namespace TrustPanel.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260612162125_InitialCreate")]
+    [Migration("20260612162226_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

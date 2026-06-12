@@ -324,14 +324,14 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Infrastructure/Persistence/Configurations/*.cs`
 - Create: `src/TrustPanel.Infrastructure/Persistence/Migrations/*`
 
-- [ ] Implement all core entities, enums, value objects, and timestamps.
-- [ ] Configure EF Core table mappings, indexes, unique constraints, and JSONB owned types.
-- [ ] Configure global query filters for workspace-scoped entities: `Testimonial`, `Widget`, `CollectionForm`, `WidgetEvent`, `EmailLog`, `ApiKey`, `WebhookEndpoint`, `ImportSource`, and `AuditLog`.
-- [ ] Add `ICurrentUser` and `ICurrentWorkspace` abstractions in Application.
-- [ ] Add workspace resolution middleware that reads workspace from authenticated claims, route values, or custom domain host.
-- [ ] Seed the four plans: Starter, Pro, Agency, Agency+.
-- [ ] Add migrations and verify schema creation against PostgreSQL.
-- [ ] Add tests proving workspace data cannot leak across tenants.
+- [x] Implement all core entities, enums, value objects, and timestamps.
+- [x] Configure EF Core table mappings, indexes, unique constraints, and JSONB owned types.
+- [x] Configure global query filters for workspace-scoped entities: `Testimonial`, `Widget`, `CollectionForm`, `WidgetEvent`, `EmailLog`, `ApiKey`, `WebhookEndpoint`, `ImportSource`, and `AuditLog`.
+- [x] Add `ICurrentUser` and `ICurrentWorkspace` abstractions in Application.
+- [x] Add workspace resolution middleware that reads workspace from authenticated claims, route values, or custom domain host.
+- [x] Seed the four plans: Starter, Pro, Agency, Agency+.
+- [x] Add migrations and verify schema creation against PostgreSQL.
+- [x] Add tests proving workspace data cannot leak across tenants.
 
 ### Phase 2: Auth and Onboarding
 

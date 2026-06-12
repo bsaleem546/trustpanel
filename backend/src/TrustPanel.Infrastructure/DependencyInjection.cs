@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TrustPanel.Application.Auth;
 using TrustPanel.Application.Common;
+using TrustPanel.Infrastructure.Email;
 using TrustPanel.Infrastructure.Identity;
 using TrustPanel.Infrastructure.Persistence;
+using TrustPanel.Infrastructure.Security;
 
 namespace TrustPanel.Infrastructure;
 
@@ -35,6 +38,16 @@ public static class DependencyInjection
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
+
+        services.Configure<DataProtectionTokenProviderOptions>(options =>
+        {
+            // Password reset / email confirmation tokens expire after 60 minutes.
+            options.TokenLifespan = TimeSpan.FromMinutes(60);
+        });
+
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddScoped<IAuthEmailSender, LoggingAuthEmailSender>();
 
         return services;
     }
