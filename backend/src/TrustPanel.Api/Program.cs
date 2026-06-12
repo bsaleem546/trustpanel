@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using TrustPanel.Api;
+using TrustPanel.Api.Endpoints;
 using TrustPanel.Api.HealthChecks;
 using TrustPanel.Api.Middleware;
 using TrustPanel.Api.Responses;
 using TrustPanel.Api.Security;
+using TrustPanel.Application;
 using TrustPanel.Application.Common;
 using TrustPanel.Infrastructure;
 
@@ -38,9 +41,42 @@ builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+
+var jwtOptions = JwtOptions.From(builder.Configuration);
+var authBuilder = builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = jwtOptions.ToTokenValidationParameters();
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+                await ApiResults.Unauthorized().ExecuteAsync(context.HttpContext);
+            },
+            OnForbidden = context => ApiResults.Forbidden().ExecuteAsync(context.HttpContext)
+        };
+    });
+
+var googleClientId = builder.Configuration["GOOGLE_CLIENT_ID"];
+if (!string.IsNullOrWhiteSpace(googleClientId))
+{
+    authBuilder
+        .AddCookie("External")
+        .AddGoogle(options =>
+        {
+            options.ClientId = googleClientId;
+            options.ClientSecret = builder.Configuration["GOOGLE_CLIENT_SECRET"] ?? string.Empty;
+            options.SignInScheme = "External";
+        });
+}
+
+builder.Services.AddAuthorization();
 
 var dataProtection = builder.Services.AddDataProtection();
 var dataProtectionKeysPath = builder.Configuration["DATA_PROTECTION_KEYS_PATH"];
@@ -79,7 +115,11 @@ var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ApiExceptionMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseMiddleware<WorkspaceResolutionMiddleware>();
+
+app.MapAuthEndpoints();
 
 if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Testing")
 {

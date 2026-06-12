@@ -341,16 +341,16 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Infrastructure/Identity/**`
 - Create: `src/TrustPanel.Api/Security/JwtOptions.cs`
 
-- [ ] Implement registration with email/password through ASP.NET Core Identity.
-- [ ] Send email confirmation token on registration.
-- [ ] Implement login with 15-minute JWT access token and 30-day refresh token in `httpOnly`, `Secure`, `SameSite` cookie.
-- [ ] Hash refresh tokens in database and expose active session listing by `SessionId`.
-- [ ] Implement refresh, logout current session, and revoke session by ID.
-- [ ] Implement password reset with `DataProtectionTokenProvider` and 60-minute expiry.
-- [ ] Add Google OAuth using ASP.NET Core OAuth middleware.
-- [ ] Create a default workspace during onboarding.
-- [ ] Persist onboarding state: workspace name, logo, first form template, and embed snippet viewed.
-- [ ] Add auth integration tests for register, confirm email, login, refresh, revoke, and password reset.
+- [x] Implement registration with email/password through ASP.NET Core Identity.
+- [x] Send email confirmation token on registration.
+- [x] Implement login with 15-minute JWT access token and 30-day refresh token in `httpOnly`, `Secure`, `SameSite` cookie.
+- [x] Hash refresh tokens in database and expose active session listing by `SessionId`.
+- [x] Implement refresh, logout current session, and revoke session by ID.
+- [x] Implement password reset with `DataProtectionTokenProvider` and 60-minute expiry.
+- [x] Add Google OAuth using ASP.NET Core OAuth middleware.
+- [x] Create a default workspace during onboarding.
+- [x] Persist onboarding state: workspace name, logo, first form template, and embed snippet viewed.
+- [x] Add auth integration tests for register, confirm email, login, refresh, revoke, and password reset.
 
 ### Phase 3: Workspaces, Branding, Custom Domains
 
