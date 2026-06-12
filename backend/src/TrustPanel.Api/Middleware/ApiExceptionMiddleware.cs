@@ -52,6 +52,8 @@ public sealed class ApiExceptionMiddleware
                 return ApiResults.NotFound(notFound.Message);
             case ConflictException conflict:
                 return ApiResults.Conflict(conflict.Message);
+            case RateLimitedException rateLimited:
+                return ApiResults.RateLimited(rateLimited.Message);
             default:
                 _logger.LogError(exception, "Unhandled API exception.");
                 return ApiResults.ServerError();

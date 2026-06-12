@@ -1,8 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Check, Upload, Copy } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Stars } from "@/components/Stars";
+import { authApi, type OnboardingInput } from "@/lib/api/auth";
+import { workspacesApi } from "@/lib/api/workspaces";
+import { ApiError } from "@/lib/api/client";
+import { useMe, useRequireAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Welcome — TrustPanel" }] }),
@@ -10,18 +15,64 @@ export const Route = createFileRoute("/onboarding")({
 });
 
 function Onboarding() {
+  useRequireAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: me } = useMe();
+
   const [step, setStep] = useState(1);
-  const [slug, setSlug] = useState("northwind");
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [slug, setSlug] = useState("my-workspace");
   const [color, setColor] = useState("#7c6af7");
   const [formName, setFormName] = useState("Homepage testimonial");
+  const [error, setError] = useState<string | null>(null);
+
+  const save = useMutation({
+    mutationFn: (input: OnboardingInput) => authApi.updateOnboarding(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+
+  const saveBranding = useMutation({
+    mutationFn: () => workspacesApi.updateBranding(me!.workspaceId!, { primaryColor: color }),
+  });
+
+  async function advance() {
+    setError(null);
+    try {
+      if (step === 1) {
+        if (workspaceName.trim()) await save.mutateAsync({ workspaceName: workspaceName.trim() });
+      } else if (step === 2) {
+        if (me?.workspaceId) await saveBranding.mutateAsync();
+      } else if (step === 3) {
+        await save.mutateAsync({ firstFormTemplate: formName });
+      }
+      setStep(step + 1);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not save. Is the API running?");
+    }
+  }
+
+  async function finish(skipped = false) {
+    setError(null);
+    try {
+      await save.mutateAsync(skipped ? { completed: true } : { embedSnippetViewed: true, completed: true });
+      navigate({ to: "/dashboard" });
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not save. Is the API running?");
+    }
+  }
+
+  const busy = save.isPending || saveBranding.isPending;
 
   return (
     <div className="min-h-screen flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between border-b" style={{ borderColor: "var(--border)" }}>
         <Logo />
-        <Link to="/dashboard" className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+        <button onClick={() => finish(true)} className="text-sm" style={{ color: "var(--muted-foreground)" }}>
           Skip for now
-        </Link>
+        </button>
       </header>
       <div className="px-6 py-10 max-w-3xl w-full mx-auto flex-1">
         <div className="flex items-center gap-2 mb-8">
@@ -46,7 +97,12 @@ function Onboarding() {
           {step === 1 && (
             <Step title="What should we call your workspace?" subtitle="You can change this anytime.">
               <Field label="Workspace name">
-                <input className="tp-input" defaultValue="Northwind Agency" />
+                <input
+                  className="tp-input"
+                  placeholder="Northwind Agency"
+                  value={workspaceName}
+                  onChange={(e) => setWorkspaceName(e.target.value)}
+                />
               </Field>
               <Field label="Workspace URL">
                 <div className="flex items-center gap-2">
@@ -87,7 +143,9 @@ function Onboarding() {
                 <div className="text-xs uppercase tracking-wider mb-3" style={{ color: "var(--subtle)" }}>
                   Preview
                 </div>
-                <div className="text-lg font-medium mb-1">Share your experience with Northwind Agency</div>
+                <div className="text-lg font-medium mb-1">
+                  Share your experience with {workspaceName.trim() || "your workspace"}
+                </div>
                 <Stars value={4} size={20} />
                 <button className="mt-4 px-4 py-2 rounded-lg text-white text-sm font-medium" style={{ background: color }}>
                   Continue
@@ -117,17 +175,24 @@ function Onboarding() {
           {step === 4 && (
             <Step title="Embed your form" subtitle="Paste this snippet anywhere on your site.">
               <div className="font-mono text-sm tp-card p-4 relative" style={{ background: "var(--surface)" }}>
-                <button className="absolute top-3 right-3 tp-btn tp-btn-ghost" style={{ padding: "4px 8px" }}>
+                <button
+                  className="absolute top-3 right-3 tp-btn tp-btn-ghost"
+                  style={{ padding: "4px 8px" }}
+                  onClick={() => navigator.clipboard?.writeText(embedSnippet(slug, formName))}
+                >
                   <Copy size={12} /> Copy
                 </button>
                 <pre className="whitespace-pre-wrap break-all" style={{ color: "var(--primary-light)" }}>
-{`<script src="https://cdn.trustpanel.com/embed.js"
-  data-workspace="${slug}"
-  data-form="${formName.toLowerCase().replace(/\s+/g, "-")}"
-></script>`}
+                  {embedSnippet(slug, formName)}
                 </pre>
               </div>
             </Step>
+          )}
+
+          {error && (
+            <p className="text-sm mt-6" style={{ color: "var(--danger)" }}>
+              {error}
+            </p>
           )}
 
           <div className="mt-8 flex justify-between">
@@ -139,19 +204,26 @@ function Onboarding() {
               Back
             </button>
             {step < 4 ? (
-              <button className="tp-btn tp-btn-primary" onClick={() => setStep(step + 1)}>
-                Continue
+              <button className="tp-btn tp-btn-primary" onClick={advance} disabled={busy}>
+                {busy ? "Saving…" : "Continue"}
               </button>
             ) : (
-              <Link to="/dashboard" className="tp-btn tp-btn-primary">
-                Continue to dashboard
-              </Link>
+              <button className="tp-btn tp-btn-primary" onClick={() => finish()} disabled={busy}>
+                {busy ? "Saving…" : "Continue to dashboard"}
+              </button>
             )}
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+function embedSnippet(slug: string, formName: string) {
+  return `<script src="https://cdn.trustpanel.com/embed.js"
+  data-workspace="${slug}"
+  data-form="${formName.toLowerCase().replace(/\s+/g, "-")}"
+></script>`;
 }
 
 function Step({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {

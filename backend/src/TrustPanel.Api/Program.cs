@@ -1,3 +1,5 @@
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -10,6 +12,7 @@ using TrustPanel.Api.Security;
 using TrustPanel.Application;
 using TrustPanel.Application.Common;
 using TrustPanel.Infrastructure;
+using TrustPanel.Infrastructure.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,8 +88,33 @@ if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
     dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 }
 
-var healthChecks = builder.Services.AddHealthChecks();
 var defaultConnectionString = builder.Configuration.GetConnectionString("Default");
+
+// Hangfire owns all slow work. The server is skipped in tests so WebApplicationFactory
+// boots without polling job storage; IJobScheduler then degrades to a logged no-op.
+var hangfireEnabled = !string.IsNullOrWhiteSpace(defaultConnectionString)
+    && builder.Environment.EnvironmentName != "Testing";
+if (hangfireEnabled)
+{
+    builder.Services.AddHangfire(config => config
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(defaultConnectionString)));
+    builder.Services.AddHangfireServer(options =>
+    {
+        options.WorkerCount = int.TryParse(builder.Configuration["HANGFIRE_WORKER_COUNT"], out var workers)
+            ? workers
+            : 5;
+    });
+    builder.Services.AddScoped<IJobScheduler, HangfireJobScheduler>();
+}
+else
+{
+    builder.Services.AddScoped<IJobScheduler, NullJobScheduler>();
+}
+
+var healthChecks = builder.Services.AddHealthChecks();
 if (!string.IsNullOrWhiteSpace(defaultConnectionString))
 {
     healthChecks.AddNpgSql(defaultConnectionString, name: "postgresql", tags: ["ready"]);
@@ -120,6 +148,17 @@ app.UseAuthorization();
 app.UseMiddleware<WorkspaceResolutionMiddleware>();
 
 app.MapAuthEndpoints();
+app.MapWorkspaceEndpoints();
+
+if (hangfireEnabled)
+{
+    using var scope = app.Services.CreateScope();
+    var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    recurringJobs.AddOrUpdate<VerifyWorkspaceDomainJob>(
+        "verify-workspace-domains",
+        job => job.RunAsync(CancellationToken.None),
+        Cron.Hourly());
+}
 
 if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Testing")
 {
@@ -173,6 +212,11 @@ if (app.Environment.EnvironmentName == "Testing")
     {
         throw new InvalidOperationException("Diagnostics exception.");
     });
+
+    // Exposes the workspace resolved by WorkspaceResolutionMiddleware so tests can
+    // assert host-based (custom domain) resolution on public paths.
+    app.MapGet("/api/public/_diagnostics/workspace", (ICurrentWorkspace workspace) =>
+        ApiResults.Ok(new { workspaceId = workspace.WorkspaceId }, "Resolved workspace."));
 }
 
 app.Run();

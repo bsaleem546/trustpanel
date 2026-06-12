@@ -359,13 +359,13 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Application/Workspaces/**`
 - Create: `src/TrustPanel.Infrastructure/Jobs/VerifyWorkspaceDomainJob.cs`
 
-- [ ] Implement CRUD for workspaces within plan limits.
-- [ ] Implement white-label branding updates: logo, colors, font, TrustPanel branding visibility, and email sender.
-- [ ] Enforce Agency plan for white-label removal and custom domains.
-- [ ] Implement custom domain save flow with required CNAME target.
-- [ ] Add middleware that resolves workspace from `Host` for public form/widget requests.
-- [ ] Add Hangfire recurring DNS verification job that sets `DomainVerifiedAt`.
-- [ ] Add tests for plan gates, host-based workspace resolution, and DNS verification state transitions.
+- [x] Implement CRUD for workspaces within plan limits.
+- [x] Implement white-label branding updates: logo, colors, font, TrustPanel branding visibility, and email sender.
+- [x] Enforce Agency plan for white-label removal and custom domains.
+- [x] Implement custom domain save flow with required CNAME target.
+- [x] Add middleware that resolves workspace from `Host` for public form/widget requests.
+- [x] Add Hangfire recurring DNS verification job that sets `DomainVerifiedAt`.
+- [x] Add tests for plan gates, host-based workspace resolution, and DNS verification state transitions.
 
 ### Phase 4: Collection Forms and Public Submissions
 

@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using TrustPanel.Application.Auth;
 using TrustPanel.Application.Common.Behaviors;
+using TrustPanel.Application.Workspaces;
 
 namespace TrustPanel.Application;
 
@@ -17,6 +18,8 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddScoped<AuthSessionService>();
+        services.AddScoped<WorkspaceAccess>();
+        services.AddScoped<DomainVerificationService>();
 
         return services;
     }

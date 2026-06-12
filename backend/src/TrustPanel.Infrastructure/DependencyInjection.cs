@@ -3,9 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TrustPanel.Application.Auth;
+using TrustPanel.Application.Billing;
 using TrustPanel.Application.Common;
+using TrustPanel.Application.Workspaces;
+using TrustPanel.Infrastructure.Billing;
 using TrustPanel.Infrastructure.Email;
 using TrustPanel.Infrastructure.Identity;
+using TrustPanel.Infrastructure.Jobs;
 using TrustPanel.Infrastructure.Persistence;
 using TrustPanel.Infrastructure.Security;
 
@@ -48,6 +52,12 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IAuthEmailSender, LoggingAuthEmailSender>();
+
+        services.AddScoped<IPlanResolver, PlanResolver>();
+        services.AddSingleton<IDnsResolver, DnsClientResolver>();
+        services.AddSingleton(new CustomDomainOptions(
+            configuration["CUSTOM_DOMAIN_CNAME_TARGET"] ?? "domains.trustpanel.com"));
+        services.AddScoped<VerifyWorkspaceDomainJob>();
 
         return services;
     }

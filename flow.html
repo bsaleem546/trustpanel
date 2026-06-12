@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrustPanel — How It Works</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --surface: #141b30;
+    --surface-2: #1c2542;
+    --border: #2a3457;
+    --text: #e8edf8;
+    --muted: #93a1c5;
+    --blue: #5b8def;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }
+
+  header { text-align: center; padding: 48px 20px 10px; }
+  header h1 { font-size: 34px; }
+  header h1 span { color: var(--blue); }
+  header p { color: var(--muted); margin-top: 8px; font-size: 15px; }
+
+  /* ---- stepper ---- */
+  .steps { display: flex; gap: 8px; margin: 26px 0 18px; flex-wrap: wrap; justify-content: center; }
+  .step {
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--muted); font-size: 13px; font-weight: 600;
+    padding: 7px 14px; border-radius: 999px; cursor: pointer;
+    transition: all .3s;
+  }
+  .step.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .step.done { color: var(--green); border-color: rgba(52,211,153,.4); }
+
+  /* ---- stage ---- */
+  .stage {
+    position: relative; width: min(680px, 92vw); height: 400px;
+    margin-bottom: 18px;
+  }
+  .scene {
+    position: absolute; inset: 0; opacity: 0; pointer-events: none;
+    transform: translateY(14px); transition: opacity .45s, transform .45s;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .scene.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+  .caption { text-align: center; margin-bottom: 14px; }
+  .caption h2 { font-size: 19px; }
+  .caption p { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+
+  /* browser frame mockup */
+  .browser {
+    width: 100%; flex: 1; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 16px 40px rgba(0,0,0,.35);
+  }
+  .bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #3a456b; }
+  .url {
+    margin-left: 10px; font-size: 11.5px; color: var(--muted);
+    background: var(--bg); border-radius: 6px; padding: 3px 12px;
+    font-family: Consolas, monospace;
+  }
+  .body { flex: 1; padding: 20px 24px; position: relative; }
+
+  /* shared widgets */
+  .field {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; font-size: 13px; color: var(--text);
+    font-family: Consolas, monospace; margin-bottom: 10px; min-height: 37px;
+  }
+  .field .ph { color: #4d5a82; }
+  .btn {
+    display: inline-block; background: var(--blue); color: #fff; border-radius: 8px;
+    padding: 9px 18px; font-size: 13px; font-weight: 600;
+  }
+  .btn.green { background: var(--green); color: #06281c; }
+  .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
+
+  .cursor::after { content: "▌"; animation: blink 1s steps(1) infinite; color: var(--blue); }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* typing effect: reveal via width */
+  .type { display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom; width: 0; }
+  .active .type { animation: typing 1.2s steps(24, end) forwards; }
+  .active .type.d1 { animation-delay: .4s; }
+  .active .type.d2 { animation-delay: 1.8s; }
+  @keyframes typing { to { width: 100%; } }
+
+  /* generic appear animations (run when scene active) */
+  .pop, .rise, .clickfx { opacity: 0; }
+  .active .pop  { animation: pop .45s ease forwards; }
+  .active .rise { animation: rise .5s ease forwards; }
+  @keyframes pop  { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .active .clickfx { animation: clickfx .6s ease forwards; }
+  @keyframes clickfx {
+    0% { opacity: 0; transform: scale(1); }
+    40% { opacity: 1; transform: scale(.93); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  /* delays */
+  .active [data-d="1"] { animation-delay: .5s; }
+  .active [data-d="2"] { animation-delay: 1.1s; }
+  .active [data-d="3"] { animation-delay: 1.7s; }
+  .active [data-d="4"] { animation-delay: 2.3s; }
+  .active [data-d="5"] { animation-delay: 2.9s; }
+  .active [data-d="6"] { animation-delay: 3.5s; }
+
+  .success {
+    display: inline-flex; align-items: center; gap: 7px;
+    color: var(--green); font-size: 13px; font-weight: 600;
+  }
+  .success::before { content: "✔"; }
+
+  /* stars */
+  .stars { display: flex; gap: 5px; font-size: 22px; margin: 6px 0 12px; }
+  .stars i { font-style: normal; color: #39456e; }
+  .active .stars i { animation: star .3s ease forwards; }
+  .active .stars i:nth-child(1) { animation-delay: .5s; }
+  .active .stars i:nth-child(2) { animation-delay: .65s; }
+  .active .stars i:nth-child(3) { animation-delay: .8s; }
+  .active .stars i:nth-child(4) { animation-delay: .95s; }
+  .active .stars i:nth-child(5) { animation-delay: 1.1s; }
+  @keyframes star { to { color: var(--amber); transform: scale(1.12); } }
+
+  /* testimonial cards */
+  .tcard {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; font-size: 12.5px; color: var(--muted);
+  }
+  .tcard b { color: var(--text); display: block; font-size: 12px; margin-bottom: 3px; }
+  .tcard .st { color: var(--amber); font-size: 11px; letter-spacing: 2px; }
+  .badge {
+    font-size: 10px; font-weight: 700; border-radius: 5px; padding: 2px 8px;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .badge.pending  { background: rgba(251,191,36,.15); color: var(--amber); }
+  .badge.approved { background: rgba(52,211,153,.15); color: var(--green); }
+
+  /* status badge swap in scene 4 */
+  .swap { position: relative; display: inline-block; min-width: 72px; height: 18px; }
+  .swap .badge { position: absolute; left: 0; top: 0; }
+  .active .swap .pending  { animation: fadeout .3s ease 2.2s forwards; }
+  .swap .approved { opacity: 0; }
+  .active .swap .approved { animation: pop .35s ease 2.4s forwards; }
+  @keyframes fadeout { to { opacity: 0; } }
+
+  /* widget wall grid */
+  .wall { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 6px; }
+
+  /* code block */
+  .code {
+    background: #0d1326; border: 1px solid var(--border); border-radius: 8px;
+    font-family: Consolas, monospace; font-size: 12px; padding: 12px 14px;
+    color: #9ecbff; margin-bottom: 14px; overflow: hidden;
+  }
+
+  /* counter */
+  .stats { display: flex; gap: 14px; margin-top: 14px; }
+  .stat {
+    flex: 1; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; text-align: center;
+  }
+  .stat b { font-size: 20px; color: var(--blue); display: block; }
+  .stat span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* progress bar under stage */
+  .progress { width: min(680px, 92vw); height: 3px; background: var(--surface-2); border-radius: 2px; margin-bottom: 40px; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--blue); }
+  .progress i.run { animation: fill 5s linear forwards; }
+  @keyframes fill { to { width: 100%; } }
+
+  footer { color: var(--muted); font-size: 12px; padding-bottom: 30px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Trust<span>Panel</span></h1>
+  <p>How the system works — follow a testimonial from signup to a live widget</p>
+</header>
+
+<div class="steps" id="steps">
+  <div class="step">1. Sign up</div>
+  <div class="step">2. Create form</div>
+  <div class="step">3. Customer submits</div>
+  <div class="step">4. Approve</div>
+  <div class="step">5. Embed widget</div>
+  <div class="step">6. Go live</div>
+</div>
+
+<div class="stage" id="stage">
+
+  <!-- Scene 1: Sign up -->
+  <div class="scene">
+    <div class="caption">
+      <h2>A business owner signs up</h2>
+      <p>Account + their own workspace are created, and a confirmation email is sent.</p>
+    </div>
+    <div class="browser">
+      <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="url">trustpanel.io/register</span></div>
+      <div class="body">
+        <div class="label">Email</div>
+        <div class="field"><span class="type">sara@acme.com</span></div>
+        <div class="label">Workspace name</div>
+        <div class="field"><span class="type d1">Acme Inc</span></div>
+        <span class="btn clickfx" data-d="4">Create account</span>
+        <div style="margin-top:16px;">
+          <span class="success rise" data-d="5">Workspace “Acme Inc” created — check your email to confirm</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 2: Create collection form -->
+  <div class="scene">
+    <div class="caption">
+      <h2>She creates a collection form</h2>
+      <p>A shareable link where customers can leave text or video testimonials.</p>
+    </div>
+    <div class="browser">
+      <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="url">trustpanel.io/dashboard/forms</span></div>
+      <div class="body">
+        <span class="btn clickfx">+ New collection form</span>
+        <div style="margin-top:16px;">
+          <div class="label rise" data-d="2">Form name</div>
+          <div class="field rise" data-d="2"><span class="type d2">Customer love ❤</span></div>
+          <div class="label rise" data-d="4">Share link</div>
+          <div class="field rise" data-d="4" style="color:var(--green);">trustpanel.io/collect/acme/customer-love</div>
+          <span class="success rise" data-d="5">Form is live — share it anywhere</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 3: Customer submits -->
+  <div class="scene">
+    <div class="caption">
+      <h2>A customer leaves a testimonial</h2>
+      <p>They open the link, rate their experience, and write (or record) their story.</p>
+    </div>
+    <div class="browser">
+      <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="url">trustpanel.io/collect/acme/customer-love</span></div>
+      <div class="body">
+        <div class="label">Your rating</div>
+        <div class="stars"><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i></div>
+        <div class="label">Your experience</div>
+        <div class="field"><span class="type d1">Acme saved us 10 hours a week!</span></div>
+        <span class="btn green clickfx" data-d="5">Submit testimonial</span>
+        <div style="margin-top:14px;">
+          <span class="success rise" data-d="6">Thanks, John! Your testimonial was sent for review</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 4: Approve -->
+  <div class="scene">
+    <div class="caption">
+      <h2>The owner reviews and approves it</h2>
+      <p>New submissions land in the dashboard as “pending” until approved.</p>
+    </div>
+    <div class="browser">
+      <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="url">trustpanel.io/dashboard/testimonials</span></div>
+      <div class="body">
+        <div class="tcard pop" style="margin-bottom:12px;">
+          <b>John Miller <span class="swap"><span class="badge pending">Pending</span><span class="badge approved">Approved</span></span></b>
+          <span class="st">★★★★★</span>
+          <div>“Acme saved us 10 hours a week!”</div>
+        </div>
+        <span class="btn green clickfx" data-d="3">Approve ✓</span>
+        <div style="margin-top:14px;">
+          <span class="success rise" data-d="5">Approved — ready to publish in widgets</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 5: Embed widget -->
+  <div class="scene">
+    <div class="caption">
+      <h2>She builds a widget and copies the embed code</h2>
+      <p>One snippet — paste it into any website.</p>
+    </div>
+    <div class="browser">
+      <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="url">trustpanel.io/dashboard/widgets</span></div>
+      <div class="body">
+        <div class="label">Widget type</div>
+        <div class="field rise">Wall of Love &nbsp;·&nbsp; approved only &nbsp;·&nbsp; min ★4</div>
+        <div class="label rise" data-d="2">Embed code</div>
+        <div class="code rise" data-d="2"><span class="type d2">&lt;script src="https://cdn.trustpanel.io/widget.js" data-widget="w_8f3a"&gt;&lt;/script&gt;</span></div>
+        <span class="btn clickfx" data-d="5">Copy snippet</span>
+        <span class="success rise" data-d="6" style="margin-left:12px;">Copied!</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 6: Live wall -->
+  <div class="scene">
+    <div class="caption">
+      <h2>Visitors see the wall of love — live</h2>
+      <p>The widget serves approved testimonials and tracks views and clicks per day.</p>
+    </div>
+    <div class="browser">
+      <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="url">acme.com — powered by TrustPanel</span></div>
+      <div class="body">
+        <div class="wall">
+          <div class="tcard rise" data-d="1"><b>John M.</b><span class="st">★★★★★</span><div>“Saved us 10 hours a week!”</div></div>
+          <div class="tcard rise" data-d="2"><b>Priya S.</b><span class="st">★★★★★</span><div>“Setup took five minutes.”</div></div>
+          <div class="tcard rise" data-d="3"><b>Leo T.</b><span class="st">★★★★☆</span><div>“Support is incredible.”</div></div>
+        </div>
+        <div class="stats">
+          <div class="stat pop" data-d="4"><b data-count="1284">0</b><span>views today</span></div>
+          <div class="stat pop" data-d="5"><b data-count="96">0</b><span>clicks</span></div>
+          <div class="stat pop" data-d="6"><b data-count="31">0</b><span>new leads</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="progress"><i id="bar"></i></div>
+
+<footer>TrustPanel — multi-tenant testimonial collection &amp; widgets · auto-playing demo, click a step to jump</footer>
+
+<script>
+  const scenes = [...document.querySelectorAll('.scene')];
+  const steps  = [...document.querySelectorAll('.step')];
+  const bar    = document.getElementById('bar');
+  const DURATION = 5000;
+  let current = 0, timer;
+
+  function counters(scene) {
+    scene.querySelectorAll('[data-count]').forEach(el => {
+      const target = +el.dataset.count;
+      const start = performance.now();
+      function tick(now) {
+        const p = Math.min((now - start - 2200) / 1200, 1);
+        if (p < 0) { requestAnimationFrame(tick); return; }
+        el.textContent = Math.round(target * p).toLocaleString();
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function show(i) {
+    current = i;
+    scenes.forEach((s, n) => {
+      // remove + force reflow so CSS animations restart on revisit
+      s.classList.remove('active');
+      if (n === i) { void s.offsetWidth; s.classList.add('active'); }
+    });
+    steps.forEach((s, n) => {
+      s.classList.toggle('active', n === i);
+      s.classList.toggle('done', n < i);
+    });
+    bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run');
+    counters(scenes[i]);
+    clearTimeout(timer);
+    timer = setTimeout(() => show((i + 1) % scenes.length), DURATION);
+  }
+
+  steps.forEach((s, n) => s.addEventListener('click', () => show(n)));
+  show(0);
+</script>
+
+</body>
+</html>

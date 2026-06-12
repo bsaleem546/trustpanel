@@ -23,3 +23,9 @@ public class ForbiddenAppException : Exception
 {
     public ForbiddenAppException(string message) : base(message) { }
 }
+
+/// <summary>Maps to a 429 envelope response.</summary>
+public class RateLimitedException : Exception
+{
+    public RateLimitedException(string message) : base(message) { }
+}
