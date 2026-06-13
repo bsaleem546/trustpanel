@@ -49,7 +49,7 @@ public sealed class ListV1TestimonialsQueryHandler
                 t.Submitter == null ? null : t.Submitter.Name,
                 t.Submitter == null ? null : t.Submitter.Company,
                 t.Submitter == null ? null : t.Submitter.JobTitle,
-                t.Submitter == null ? null : t.Submitter.AvatarUrl,
+                t.Submitter == null ? null : t.Submitter.AvatarPath,
                 t.Rating, t.Tags, t.CreatedAt))
             .ToListAsync(cancellationToken);
     }
@@ -79,7 +79,7 @@ public sealed class GetV1TestimonialQueryHandler
                 t.Submitter == null ? null : t.Submitter.Name,
                 t.Submitter == null ? null : t.Submitter.Company,
                 t.Submitter == null ? null : t.Submitter.JobTitle,
-                t.Submitter == null ? null : t.Submitter.AvatarUrl,
+                t.Submitter == null ? null : t.Submitter.AvatarPath,
                 t.Rating, t.Tags, t.CreatedAt))
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException("Testimonial not found.");
@@ -122,7 +122,7 @@ public sealed class CreateV1TestimonialCommandHandler
 
         return new PublicTestimonialDto(
             t.Id, t.Content, t.Submitter?.Name, t.Submitter?.Company,
-            t.Submitter?.JobTitle, t.Submitter?.AvatarUrl,
+            t.Submitter?.JobTitle, t.Submitter?.AvatarPath,
             t.Rating, t.Tags, t.CreatedAt);
     }
 }

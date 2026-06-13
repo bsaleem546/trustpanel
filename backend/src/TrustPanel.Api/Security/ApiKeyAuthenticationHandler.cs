@@ -6,6 +6,7 @@ using System.Text.Encodings.Web;
 using TrustPanel.Application.Common;
 using TrustPanel.Application.PublicApi;
 
+
 namespace TrustPanel.Api.Security;
 
 public sealed class ApiKeyAuthenticationOptions : AuthenticationSchemeOptions { }
@@ -46,7 +47,7 @@ public sealed class ApiKeyAuthenticationHandler
 
         // Rate limit: 1000/h per key.
         var allowed = await _rateLimiter.TryConsumeAsync(
-            $"apikey:{key.Id}", 1000, TimeSpan.FromHours(1));
+            $"apikey:{key.Id}", 1000, TimeSpan.FromHours(1), CancellationToken.None);
         if (!allowed)
             return AuthenticateResult.Fail("Rate limit exceeded.");
 
@@ -66,10 +67,3 @@ public sealed class ApiKeyAuthenticationHandler
     }
 }
 
-public static class AppClaims
-{
-    public const string WorkspaceId = "workspace_id";
-    public const string UserId = "sub";
-    public const string SessionId = "session_id";
-    public const string Role = "role";
-}

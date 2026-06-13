@@ -52,6 +52,8 @@ builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 var jwtOptions = JwtOptions.From(builder.Configuration);
 var authBuilder = builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddScheme<TrustPanel.Api.Security.ApiKeyAuthenticationOptions, TrustPanel.Api.Security.ApiKeyAuthenticationHandler>(
+        "ApiKey", _ => { })
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = jwtOptions.ToTokenValidationParameters();
@@ -79,7 +81,11 @@ if (!string.IsNullOrWhiteSpace(googleClientId))
         });
 }
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(TrustPanel.Api.Security.SuperAdminPolicy.Name,
+        TrustPanel.Api.Security.SuperAdminPolicy.Build());
+});
 
 var dataProtection = builder.Services.AddDataProtection();
 var dataProtectionKeysPath = builder.Configuration["DATA_PROTECTION_KEYS_PATH"];
@@ -162,6 +168,9 @@ app.MapResendWebhookEndpoints();
 app.MapAnalyticsEndpoints();
 app.MapAiEndpoints();
 app.MapTeamEndpoints();
+app.MapPublicApiV1Endpoints();
+app.MapAdminEndpoints();
+app.MapGdprEndpoints();
 app.MapPublicEventEndpoints();
 
 if (hangfireEnabled)

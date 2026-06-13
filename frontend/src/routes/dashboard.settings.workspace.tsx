@@ -2,16 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Check, Upload } from "lucide-react";
+import { Check, Upload, Download, Trash2 } from "lucide-react";
 import { workspacesApi } from "@/lib/api/workspaces";
 import { useCurrentWorkspace, useRequireAuth } from "@/lib/auth";
+import { getAccessToken } from "@/lib/api/client";
 
 export const Route = createFileRoute("/dashboard/settings/workspace")({
   head: () => ({ meta: [{ title: "Workspace settings — TrustPanel" }] }),
   component: WorkspaceSettings,
 });
 
-const tabs = ["General", "Branding", "Domain", "Notifications"] as const;
+const tabs = ["General", "Branding", "Domain", "Notifications", "Privacy"] as const;
 
 function WorkspaceSettings() {
   useRequireAuth();
@@ -209,8 +210,94 @@ function WorkspaceSettings() {
             </Field>
           </Card>
         )}
+
+        {tab === "Privacy" && workspace && (
+          <PrivacyTab workspaceId={workspace.id} />
+        )}
       </div>
     </DashboardLayout>
+  );
+}
+
+function PrivacyTab({ workspaceId }: { workspaceId: string }) {
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
+  const [deleteCount, setDeleteCount] = useState<number | null>(null);
+
+  function exportData() {
+    const token = getAccessToken();
+    const url = `/api/gdpr/export?workspaceId=${workspaceId}`;
+    const a = document.createElement("a");
+    a.href = token ? url + `&access_token=${token}` : url;
+    // Use fetch with auth header and trigger download
+    fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((r) => r.blob())
+      .then((blob) => {
+        const objUrl = URL.createObjectURL(blob);
+        a.href = objUrl;
+        a.download = `gdpr-export-${workspaceId}.csv`;
+        a.click();
+        URL.revokeObjectURL(objUrl);
+      })
+      .catch(() => alert("Export failed."));
+  }
+
+  function deletePersonalData() {
+    if (!deleteEmail.trim()) return;
+    fetch(`/api/gdpr/delete?workspaceId=${workspaceId}&email=${encodeURIComponent(deleteEmail.trim())}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
+    })
+      .then((r) => r.json())
+      .then((body) => {
+        const count = body?.data?.deleted ?? 0;
+        setDeleteCount(count);
+        setDeleteMsg(`Deleted personal data from ${count} record(s).`);
+        setDeleteEmail("");
+      })
+      .catch(() => setDeleteMsg("Delete failed."));
+  }
+
+  return (
+    <>
+      <Card title="Data export (GDPR)">
+        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+          Download a CSV of all testimonial personal data stored in this workspace.
+        </p>
+        <button className="tp-btn tp-btn-primary flex items-center gap-2" onClick={exportData}>
+          <Download size={14} /> Export data as CSV
+        </button>
+      </Card>
+
+      <Card title="Delete personal data" tone="danger">
+        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+          Remove all personal data (name, email, company) for a specific submitter. The testimonial content is anonymised, not deleted.
+        </p>
+        <Field label="Submitter email">
+          <input
+            className="tp-input"
+            type="email"
+            placeholder="user@example.com"
+            value={deleteEmail}
+            onChange={(e) => setDeleteEmail(e.target.value)}
+          />
+        </Field>
+        {deleteMsg && (
+          <p className="text-xs" style={{ color: deleteCount !== null && deleteCount >= 0 ? "var(--success)" : "var(--danger)" }}>
+            {deleteMsg}
+          </p>
+        )}
+        <button
+          className="tp-btn tp-btn-danger flex items-center gap-2"
+          disabled={!deleteEmail.trim()}
+          onClick={() => {
+            if (confirm(`Delete all personal data for "${deleteEmail}"?`)) deletePersonalData();
+          }}
+        >
+          <Trash2 size={14} /> Delete personal data
+        </button>
+      </Card>
+    </>
   );
 }
 

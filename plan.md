@@ -514,12 +514,12 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Api/Security/WorkspaceRoleAuthorizationHandler.cs`
 - Create: `src/TrustPanel.Application/Common/Behaviors/AuthorizationBehavior.cs`
 
-- [ ] Implement invitations by email with 7-day signed invitation URL.
-- [ ] Implement workspace roles: Owner, Admin, Viewer.
-- [ ] Add policy-based authorization with custom `IAuthorizationHandler` checking `WorkspaceMember`.
-- [ ] Apply authorization in MediatR pipeline behavior for commands and queries.
-- [ ] Append activity log entries on write commands.
-- [ ] Add tests for invitation accept, role permissions, viewer write denial, and owner-only billing/delete actions.
+- [x] Implement invitations by email with 7-day signed invitation URL.
+- [x] Implement workspace roles: Owner, Admin, Viewer.
+- [x] Add policy-based authorization with custom `IAuthorizationHandler` checking `WorkspaceMember`.
+- [x] Apply authorization in MediatR pipeline behavior for commands and queries.
+- [x] Append activity log entries on write commands.
+- [x] Add tests for invitation accept, role permissions, viewer write denial, and owner-only billing/delete actions.
 
 ### Phase 13: Public REST API and Webhooks
 
@@ -529,17 +529,17 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Api/Security/ApiKeyAuthenticationHandler.cs`
 - Create: `src/TrustPanel.Infrastructure/Integrations/OutboundWebhookDispatcher.cs`
 
-- [ ] Implement API key create, list, rename, revoke.
-- [ ] Generate API keys once, store SHA-256 hash, and never return plaintext after creation.
-- [ ] Implement API key authentication from `Authorization: Bearer`.
-- [ ] Rate limit API keys to 1,000 requests per hour through Redis token bucket.
-- [ ] Implement `GET /api/v1/testimonials` for approved testimonial listing with filters.
-- [ ] Implement `GET /api/v1/testimonials/{id}`.
-- [ ] Implement `POST /api/v1/testimonials` for programmatic creation.
-- [ ] Implement outbound webhooks when testimonials are approved.
-- [ ] Sign outbound webhook payloads with workspace webhook secret.
-- [ ] Expose OpenAPI documentation with Scalar.
-- [ ] Add tests for API key hashing, auth, rate limit, public API filters, and webhook delivery.
+- [x] Implement API key create, list, rename, revoke.
+- [x] Generate API keys once, store SHA-256 hash, and never return plaintext after creation.
+- [x] Implement API key authentication from `Authorization: Bearer`.
+- [x] Rate limit API keys to 1,000 requests per hour through Redis token bucket.
+- [x] Implement `GET /api/v1/testimonials` for approved testimonial listing with filters.
+- [x] Implement `GET /api/v1/testimonials/{id}`.
+- [x] Implement `POST /api/v1/testimonials` for programmatic creation.
+- [x] Implement outbound webhooks when testimonials are approved.
+- [x] Sign outbound webhook payloads with workspace webhook secret.
+- [x] Expose OpenAPI documentation with Scalar.
+- [x] Add tests for API key hashing, auth, rate limit, public API filters, and webhook delivery.
 
 ### Phase 14: Super Admin
 
@@ -548,14 +548,14 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Application/Admin/**`
 - Create: `src/TrustPanel.Api/Security/SuperAdminPolicies.cs`
 
-- [ ] Implement admin listing for users, workspaces, and subscriptions.
-- [ ] Implement short-lived impersonation JWT with original admin ID claim.
-- [ ] Implement manual plan override for comps and extended trials.
-- [ ] Pull MRR from Stripe API rather than storing local MRR totals.
-- [ ] Implement active subscriber and churn metrics.
-- [ ] Implement email broadcast as Hangfire bulk job filtered by plan or activity segment.
-- [ ] Expose Hangfire dashboard at `/hangfire` behind SuperAdmin policy.
-- [ ] Add tests for super-admin authorization, impersonation claims, plan override, and broadcast job enqueueing.
+- [x] Implement admin listing for users, workspaces, and subscriptions.
+- [x] Implement short-lived impersonation JWT with original admin ID claim.
+- [x] Implement manual plan override for comps and extended trials.
+- [x] Pull MRR from Stripe API rather than storing local MRR totals.
+- [x] Implement active subscriber and churn metrics.
+- [x] Implement email broadcast as Hangfire bulk job filtered by plan or activity segment.
+- [x] Expose Hangfire dashboard at `/hangfire` behind SuperAdmin policy.
+- [x] Add tests for super-admin authorization, impersonation claims, plan override, and broadcast job enqueueing.
 
 ### Phase 15: Security Hardening
 
@@ -564,24 +564,24 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Modify: `src/TrustPanel.Api/Middleware/**`
 - Modify: `src/TrustPanel.Api/Security/**`
 
-- [ ] Apply .NET 8 RateLimiter middleware to all API route groups by IP, workspace, form, or API key as appropriate.
-- [ ] Ensure every API response follows the required envelope: `code`, `status`, `data`, `message`, `error`, and `errors`.
-- [ ] Ensure validation, auth, forbidden, not-found, conflict, rate-limit, webhook, Turnstile, and exception responses use the same envelope.
-- [ ] Ensure JWT access tokens expire in 15 minutes.
-- [ ] Ensure refresh tokens are stored only in `httpOnly`, `Secure` cookies.
-- [ ] Add antiforgery protection for stateful cookie-backed endpoints using double-submit cookie pattern.
-- [ ] Validate Stripe signatures before webhook handling.
-- [ ] Validate Resend webhook authenticity if provider supports signature verification.
-- [ ] Store API keys SHA-256 hashed and only show plaintext once.
-- [ ] Validate video MIME type and max size before issuing pre-signed upload URLs.
-- [ ] Apply CSP headers on public collection pages.
-- [ ] Enforce Redis rate limit of 5 submissions per IP per hour per form.
-- [ ] Keep R2 bucket private and issue only pre-signed file URLs.
-- [ ] Append immutable audit logs on every write command.
-- [ ] Implement GDPR export endpoint streaming submitter data as CSV.
-- [ ] Implement GDPR deletion request purging testimonials and personal submitter fields.
-- [ ] Confirm no secrets are exposed through frontend-readable config endpoints.
-- [ ] Add Sentry release tagging and error grouping for the API.
+- [x] Apply .NET 8 RateLimiter middleware to all API route groups by IP, workspace, form, or API key as appropriate.
+- [x] Ensure every API response follows the required envelope: `code`, `status`, `data`, `message`, `error`, and `errors`.
+- [x] Ensure validation, auth, forbidden, not-found, conflict, rate-limit, webhook, Turnstile, and exception responses use the same envelope.
+- [x] Ensure JWT access tokens expire in 15 minutes.
+- [x] Ensure refresh tokens are stored only in `httpOnly`, `Secure` cookies.
+- [x] Add antiforgery protection for stateful cookie-backed endpoints using double-submit cookie pattern.
+- [x] Validate Stripe signatures before webhook handling.
+- [x] Validate Resend webhook authenticity if provider supports signature verification.
+- [x] Store API keys SHA-256 hashed and only show plaintext once.
+- [x] Validate video MIME type and max size before issuing pre-signed upload URLs.
+- [x] Apply CSP headers on public collection pages.
+- [x] Enforce Redis rate limit of 5 submissions per IP per hour per form.
+- [x] Keep R2 bucket private and issue only pre-signed file URLs.
+- [x] Append immutable audit logs on every write command.
+- [x] Implement GDPR export endpoint streaming submitter data as CSV.
+- [x] Implement GDPR deletion request purging testimonials and personal submitter fields.
+- [x] Confirm no secrets are exposed through frontend-readable config endpoints.
+- [x] Add Sentry release tagging and error grouping for the API.
 
 ### Phase 16: Deployment and Operations
 
@@ -593,16 +593,16 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `scripts/seed-plans.ps1`
 - Create: `docs/backend-ops.md`
 
-- [ ] Containerize the API.
-- [ ] Configure Nginx reverse proxy to Kestrel.
-- [ ] Configure Certbot or Cloudflare SSL flow.
-- [ ] Configure Cloudflare caching for `widget.js` and 60-second TTL for public widget API responses.
-- [ ] Configure environment variables for PostgreSQL, Redis, Stripe, Resend, R2, Meilisearch, Anthropic, Turnstile, Sentry, JWT signing, and DataProtection keys.
-- [ ] Keep `.env.example` synchronized with deployment docs and every configuration option the backend reads.
-- [ ] Add database migration script for deployment.
-- [ ] Add recurring Hangfire job registration at startup.
-- [ ] Add backup notes for PostgreSQL and R2.
-- [ ] Add production readiness checklist covering health checks, logs, alerts, secrets, migrations, webhooks, and rate limits.
+- [x] Containerize the API.
+- [x] Configure Nginx reverse proxy to Kestrel.
+- [x] Configure Certbot or Cloudflare SSL flow.
+- [x] Configure Cloudflare caching for `widget.js` and 60-second TTL for public widget API responses.
+- [x] Configure environment variables for PostgreSQL, Redis, Stripe, Resend, R2, Meilisearch, Anthropic, Turnstile, Sentry, JWT signing, and DataProtection keys.
+- [x] Keep `.env.example` synchronized with deployment docs and every configuration option the backend reads.
+- [x] Add database migration script for deployment.
+- [x] Add recurring Hangfire job registration at startup.
+- [x] Add backup notes for PostgreSQL and R2.
+- [x] Add production readiness checklist covering health checks, logs, alerts, secrets, migrations, webhooks, and rate limits.
 
 ## Test Strategy
 

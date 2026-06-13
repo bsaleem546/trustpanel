@@ -71,6 +71,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<TrustPanel.Application.Admin.IAdminUserLookup, AdminUserLookup>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IAuthEmailSender, LoggingAuthEmailSender>();
 
@@ -130,6 +131,8 @@ public static class DependencyInjection
         services.AddScoped<IInsightsJobRunner>(sp => sp.GetRequiredService<GenerateWorkspaceInsightsJob>());
         services.AddScoped<SuggestReplyJob>();
         services.AddScoped<IReplyJobRunner>(sp => sp.GetRequiredService<SuggestReplyJob>());
+
+        services.AddHttpClient<TrustPanel.Infrastructure.Integrations.OutboundWebhookDispatcher>();
 
         var meilisearchUrl = configuration["MEILISEARCH_URL"];
         if (!string.IsNullOrWhiteSpace(meilisearchUrl))
