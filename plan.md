@@ -444,14 +444,14 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Infrastructure/Billing/StripeBillingService.cs`
 - Create: `src/TrustPanel.Api/Middleware/CheckWorkspaceLimitsMiddleware.cs`
 
-- [ ] Implement checkout session creation for Starter, Pro, Agency, and Agency+ monthly/annual prices.
-- [ ] Implement Stripe customer portal session creation.
-- [ ] Validate `Stripe-Signature` before processing webhook payloads.
-- [ ] Handle `invoice.payment_succeeded`, `invoice.payment_failed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
-- [ ] Apply 3-day grace period after payment failure.
-- [ ] Implement plan limit middleware for write endpoints.
-- [ ] Enforce downgrade behavior: keep existing data, block new creates until under limit.
-- [ ] Add tests for webhook signature validation, plan transitions, grace period, and limit blocking.
+- [x] Implement checkout session creation for Starter, Pro, Agency, and Agency+ monthly/annual prices.
+- [x] Implement Stripe customer portal session creation.
+- [x] Validate `Stripe-Signature` before processing webhook payloads.
+- [x] Handle `invoice.payment_succeeded`, `invoice.payment_failed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
+- [x] Apply 3-day grace period after payment failure.
+- [x] Implement plan limit middleware for write endpoints.
+- [x] Enforce downgrade behavior: keep existing data, block new creates until under limit.
+- [x] Add tests for webhook signature validation, plan transitions, grace period, and limit blocking.
 
 ### Phase 9: Email System
 
@@ -462,15 +462,15 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Api/Endpoints/EmailEndpoints.cs`
 - Create: `src/TrustPanel.Api/Endpoints/ResendWebhookEndpoints.cs`
 
-- [ ] Implement built-in templates: request, follow-up, thank-you, new testimonial notification, weekly digest.
-- [ ] Render templates with RazorLight and merge tags for submitter name, form link, workspace name, and custom fields.
-- [ ] Use workspace-specific sender name/address where plan allows it.
-- [ ] Send email through Resend SDK from Hangfire jobs.
-- [ ] Implement Resend webhook endpoint to update `EmailLog` delivery status.
-- [ ] Implement signed one-click unsubscribe URL.
-- [ ] Store suppressions in `EmailSuppression` and check before every send.
-- [ ] Enforce max 3 emails per submitter address per 30 days using Redis TTL counters.
-- [ ] Add tests for template rendering, suppression checks, rate cap, webhook status update, and signed unsubscribe.
+- [x] Implement built-in templates: request, follow-up, thank-you, new testimonial notification, weekly digest.
+- [x] Render templates with RazorLight and merge tags for submitter name, form link, workspace name, and custom fields.
+- [x] Use workspace-specific sender name/address where plan allows it.
+- [x] Send email through Resend SDK from Hangfire jobs.
+- [x] Implement Resend webhook endpoint to update `EmailLog` delivery status.
+- [x] Implement signed one-click unsubscribe URL.
+- [x] Store suppressions in `EmailSuppression` and check before every send.
+- [x] Enforce max 3 emails per submitter address per 30 days using Redis TTL counters.
+- [x] Add tests for template rendering, suppression checks, rate cap, webhook status update, and signed unsubscribe.
 
 ### Phase 10: Analytics
 
@@ -480,14 +480,14 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Application/Analytics/**`
 - Create: `src/TrustPanel.Infrastructure/Jobs/AggregateWidgetAnalyticsJob.cs`
 
-- [ ] Implement `POST /api/public/events` for widget `View` and `Click` events.
-- [ ] Use raw SQL insert for event writes to avoid EF overhead.
-- [ ] Capture widget ID, testimonial ID, event type, country, device, referrer, and timestamp.
-- [ ] Add rate protection suitable for unauthenticated beacon traffic.
-- [ ] Add nightly Hangfire aggregation into `WidgetAnalyticsDaily`.
-- [ ] Implement dashboard analytics queries for form conversion, submissions over time, rating trend, impressions, CTR, engagement, device, and country.
-- [ ] Implement streaming CSV export for analytics data.
-- [ ] Add tests for event ingestion, aggregation, dashboard queries, and CSV streaming.
+- [x] Implement `POST /api/public/events` for widget `View` and `Click` events.
+- [x] Use raw SQL insert for event writes to avoid EF overhead.
+- [x] Capture widget ID, testimonial ID, event type, country, device, referrer, and timestamp.
+- [x] Add rate protection suitable for unauthenticated beacon traffic.
+- [x] Add nightly Hangfire aggregation into `WidgetAnalyticsDaily`.
+- [x] Implement dashboard analytics queries for form conversion, submissions over time, rating trend, impressions, CTR, engagement, device, and country.
+- [x] Implement streaming CSV export for analytics data.
+- [x] Add tests for event ingestion, aggregation, dashboard queries, and CSV streaming.
 
 ### Phase 11: AI Features
 
@@ -497,14 +497,14 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Infrastructure/Jobs/AnalyzeTestimonialSentimentJob.cs`
 - Create: `src/TrustPanel.Infrastructure/Jobs/GenerateWorkspaceInsightsJob.cs`
 
-- [ ] Implement per-testimonial sentiment analysis with `claude-haiku-3-5`.
-- [ ] Implement highlight extraction for long text testimonials.
-- [ ] Implement thank-you reply suggestion generation.
-- [ ] Implement AI-assisted import filtering before saving imported reviews.
-- [ ] Implement scheduled insights reports using `claude-sonnet-4-6`.
-- [ ] Cache insights report results in Redis for 24 hours.
-- [ ] Ensure all AI calls run in Hangfire jobs and never in synchronous request handlers.
-- [ ] Add tests using a fake AI service for job behavior, persistence, and cache keys.
+- [x] Implement per-testimonial sentiment analysis with `claude-haiku-3-5`.
+- [x] Implement highlight extraction for long text testimonials.
+- [x] Implement thank-you reply suggestion generation.
+- [x] Implement AI-assisted import filtering before saving imported reviews.
+- [x] Implement scheduled insights reports using `claude-sonnet-4-6`.
+- [x] Cache insights report results in Redis for 24 hours.
+- [x] Ensure all AI calls run in Hangfire jobs and never in synchronous request handlers.
+- [x] Add tests using a fake AI service for job behavior, persistence, and cache keys.
 
 ### Phase 12: Team and Permissions
 

@@ -157,6 +157,12 @@ app.MapWidgetEndpoints();
 app.MapPublicWidgetEndpoints();
 app.MapBillingEndpoints();
 app.MapStripeWebhookEndpoints();
+app.MapEmailEndpoints();
+app.MapResendWebhookEndpoints();
+app.MapAnalyticsEndpoints();
+app.MapAiEndpoints();
+app.MapTeamEndpoints();
+app.MapPublicEventEndpoints();
 
 if (hangfireEnabled)
 {
@@ -166,6 +172,10 @@ if (hangfireEnabled)
         "verify-workspace-domains",
         job => job.RunAsync(CancellationToken.None),
         Cron.Hourly());
+    recurringJobs.AddOrUpdate<AggregateWidgetAnalyticsJob>(
+        "aggregate-widget-analytics",
+        job => job.RunAsync(CancellationToken.None),
+        Cron.Daily());
 }
 
 if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Testing")

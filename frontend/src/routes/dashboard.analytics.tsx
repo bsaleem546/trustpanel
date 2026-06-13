@@ -1,186 +1,203 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { LineChart, Line, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from "recharts";
-import { impressionsData, submissionsByForm, sentimentTrend } from "@/lib/mock-data";
-import { Pill } from "@/components/Stars";
+import {
+  LineChart, Line, BarChart, Bar, ResponsiveContainer,
+  XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell,
+} from "recharts";
+import { analyticsApi, type DailyCount, type StringBucket } from "@/lib/api/analytics";
+import { useMe, useRequireAuth } from "@/lib/auth";
+import { Download } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/analytics")({
   head: () => ({ meta: [{ title: "Analytics — TrustPanel" }] }),
   component: Analytics,
 });
 
-const metrics = [
-  { l: "Widget impressions", v: "12,840", d: "+24.1%" },
-  { l: "Widget clicks", v: "1,284", d: "+18.4%" },
-  { l: "Click-through rate", v: "10.0%", d: "+1.2%" },
-  { l: "Forms submitted", v: "47", d: "+6 this week" },
+const RANGE_OPTIONS = [
+  { label: "7d", days: 7 },
+  { label: "30d", days: 30 },
+  { label: "90d", days: 90 },
 ];
 
-const topTestimonials = [
-  { rank: 1, name: "Sarah Kowalski", clicks: 412, impressions: 4820 },
-  { rank: 2, name: "Marco Bertelli", clicks: 318, impressions: 3940 },
-  { rank: 3, name: "Daniel Okafor", clicks: 261, impressions: 3120 },
-  { rank: 4, name: "Priya Raman", clicks: 198, impressions: 2680 },
-];
+const CHART_STYLE = {
+  background: "var(--card)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  color: "var(--foreground)",
+};
 
-const sources = [
-  { l: "Direct", v: 5240 },
-  { l: "Google", v: 3120 },
-  { l: "Twitter", v: 1840 },
-  { l: "Other", v: 2640 },
-];
-
-const devices = [
-  { name: "Mobile", value: 56 },
-  { name: "Desktop", value: 36 },
-  { name: "Tablet", value: 8 },
-];
+function fmt(date: string) {
+  return new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 function Analytics() {
+  useRequireAuth();
+  const { data: me } = useMe();
+  const [rangeIdx, setRangeIdx] = useState(1);
+  const daysBack = RANGE_OPTIONS[rangeIdx].days;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["analytics", me?.workspaceId, daysBack],
+    queryFn: () => analyticsApi.dashboard(me!.workspaceId!, daysBack),
+    enabled: !!me?.workspaceId,
+    staleTime: 60_000,
+  });
+
+  const submissions = (data?.submissionsOverTime ?? []).map((d: DailyCount) => ({
+    day: fmt(d.date),
+    submissions: d.count,
+  }));
+  const impressions = (data?.impressionsOverTime ?? []).map((d: DailyCount) => ({
+    day: fmt(d.date),
+    impressions: d.count,
+  }));
+  const devices = (data?.topDevices ?? []).map((d: StringBucket, i: number) => ({
+    name: d.key,
+    value: Number(d.count),
+    color: ["var(--primary)", "var(--primary-light)", "var(--info)", "var(--warning)", "var(--success)"][i % 5],
+  }));
+  const countries = data?.topCountries ?? [];
+  const maxCountry = Math.max(...countries.map((c) => Number(c.count)), 1);
+
+  const csvUrl = me?.workspaceId
+    ? analyticsApi.exportCsvUrl(me.workspaceId, daysBack)
+    : "#";
+
   return (
     <DashboardLayout
       title="Analytics"
       action={
-        <div className="flex gap-1 tp-card p-1">
-          {["7d", "30d", "90d", "Custom"].map((r, i) => (
-            <button
-              key={r}
-              className="px-3 py-1 rounded-md text-xs"
-              style={{ background: i === 1 ? "var(--primary)" : "transparent", color: i === 1 ? "white" : "var(--muted-foreground)" }}
-            >
-              {r}
-            </button>
-          ))}
+        <div className="flex gap-2 items-center">
+          <a href={csvUrl} download className="tp-btn tp-btn-ghost text-xs" style={{ padding: "6px 10px" }}>
+            <Download size={12} /> Export CSV
+          </a>
+          <div className="flex gap-1 tp-card p-1">
+            {RANGE_OPTIONS.map((r, i) => (
+              <button
+                key={r.label}
+                onClick={() => setRangeIdx(i)}
+                className="px-3 py-1 rounded-md text-xs"
+                style={{
+                  background: i === rangeIdx ? "var(--primary)" : "transparent",
+                  color: i === rangeIdx ? "white" : "var(--muted-foreground)",
+                }}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
         </div>
       }
     >
+      {isLoading && <div className="text-sm mb-4" style={{ color: "var(--subtle)" }}>Loading analytics…</div>}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {metrics.map((m) => (
-          <div key={m.l} className="tp-card p-5">
-            <div className="text-xs" style={{ color: "var(--subtle)" }}>
-              {m.l}
-            </div>
-            <div className="text-3xl font-semibold mt-2">{m.v}</div>
-            <Pill tone="success">{m.d}</Pill>
-          </div>
-        ))}
+        <StatCard label="Total approved" value={data ? String(data.totalApproved) : "—"} />
+        <StatCard label="Pending review" value={data ? String(data.totalPending) : "—"} />
+        <StatCard label="Widget impressions" value={data ? String(data.impressionsOverTime.reduce((s, d) => s + Number(d.count), 0).toLocaleString()) : "—"} />
+        <StatCard label="Submissions" value={data ? String(data.submissionsOverTime.reduce((s, d) => s + Number(d.count), 0).toLocaleString()) : "—"} />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        <ChartCard title="Impressions over time">
+        <ChartCard title="Submissions over time">
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={impressionsData}>
+            <LineChart data={submissions}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
               <XAxis dataKey="day" stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--foreground)" }} />
-              <Line type="monotone" dataKey="impressions" stroke="var(--primary)" strokeWidth={2} dot={false} />
+              <Tooltip contentStyle={CHART_STYLE} />
+              <Line type="monotone" dataKey="submissions" stroke="var(--primary)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Submissions per form">
+        <ChartCard title="Widget impressions over time">
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={submissionsByForm}>
+            <LineChart data={impressions}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="name" stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
+              <XAxis dataKey="day" stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
-              <Bar dataKey="submissions" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+              <Tooltip contentStyle={CHART_STYLE} />
+              <Line type="monotone" dataKey="impressions" stroke="var(--primary-light)" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        <ChartCard title="Rating distribution">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data?.ratingDistribution.map((r) => ({ rating: `${r.rating}★`, count: r.count })) ?? []}>
+              <CartesianGrid stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="rating" stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={CHART_STYLE} />
+              <Bar dataKey="count" fill="var(--primary)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        <div className="tp-card">
-          <div className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <div className="font-semibold">Top testimonials by engagement</div>
-          </div>
-          <table className="w-full text-sm">
-            <tbody>
-              {topTestimonials.map((t) => (
-                <tr key={t.rank} style={{ borderTop: "1px solid var(--border)" }}>
-                  <td className="px-5 py-3 w-10" style={{ color: "var(--subtle)" }}>
-                    #{t.rank}
-                  </td>
-                  <td className="px-5 py-3 font-medium">{t.name}</td>
-                  <td className="px-5 py-3" style={{ color: "var(--muted-foreground)" }}>
-                    {t.clicks} clicks
-                  </td>
-                  <td className="px-5 py-3 text-right" style={{ color: "var(--subtle)" }}>
-                    {t.impressions.toLocaleString()} views
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <ChartCard title="Traffic sources">
-          <div className="space-y-3">
-            {sources.map((s) => {
-              const max = Math.max(...sources.map((x) => x.v));
-              return (
-                <div key={s.l}>
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span>{s.l}</span>
-                    <span style={{ color: "var(--subtle)" }}>{s.v.toLocaleString()}</span>
-                  </div>
-                  <div className="h-2 rounded-full" style={{ background: "var(--border)" }}>
-                    <div className="h-full rounded-full" style={{ background: "var(--primary)", width: `${(s.v / max) * 100}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </ChartCard>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        <ChartCard title="Geo distribution">
-          <div className="h-[220px] rounded-lg flex items-center justify-center" style={{ background: "var(--surface)", border: "1px dashed var(--border)" }}>
-            <div className="text-center" style={{ color: "var(--subtle)" }}>
-              <div className="text-3xl mb-2">🌎</div>
-              <div className="text-xs">World heatmap · top: US, GB, DE, FR, IN</div>
-            </div>
-          </div>
-        </ChartCard>
 
         <ChartCard title="Devices">
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={devices} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                {devices.map((_, i) => (
-                  <Cell key={i} fill={["var(--primary)", "var(--primary-light)", "var(--info)"][i]} />
+          {devices.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={devices} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                    {devices.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={CHART_STYLE} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex justify-center flex-wrap gap-3 text-xs mt-2">
+                {devices.map((d) => (
+                  <div key={d.name} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: d.color }} />
+                    {d.name} ({d.value.toLocaleString()})
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex justify-center gap-4 text-xs mt-2">
-            {devices.map((d, i) => (
-              <div key={d.name} className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ background: ["var(--primary)", "var(--primary-light)", "var(--info)"][i] }} />
-                {d.name} {d.value}%
+              </div>
+            </>
+          ) : (
+            <div className="h-40 flex items-center justify-center text-sm" style={{ color: "var(--subtle)" }}>
+              No device data yet
+            </div>
+          )}
+        </ChartCard>
+      </div>
+
+      <ChartCard title="Top countries">
+        {countries.length > 0 ? (
+          <div className="space-y-3">
+            {countries.map((c) => (
+              <div key={c.key}>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span>{c.key}</span>
+                  <span style={{ color: "var(--subtle)" }}>{Number(c.count).toLocaleString()}</span>
+                </div>
+                <div className="h-2 rounded-full" style={{ background: "var(--border)" }}>
+                  <div className="h-full rounded-full" style={{ background: "var(--primary)", width: `${(Number(c.count) / maxCountry) * 100}%` }} />
+                </div>
               </div>
             ))}
           </div>
-        </ChartCard>
-      </div>
-
-      <ChartCard title="Sentiment over time">
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={sentimentTrend}>
-            <CartesianGrid stroke="var(--border)" vertical={false} />
-            <XAxis dataKey="month" stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis domain={[-1, 1]} stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
-            <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
-            <Line type="monotone" dataKey="score" stroke="var(--success)" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+        ) : (
+          <div className="h-20 flex items-center justify-center text-sm" style={{ color: "var(--subtle)" }}>
+            No geo data yet
+          </div>
+        )}
       </ChartCard>
     </DashboardLayout>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="tp-card p-5">
+      <div className="text-xs mb-2" style={{ color: "var(--subtle)" }}>{label}</div>
+      <div className="text-3xl font-semibold">{value}</div>
+    </div>
   );
 }
 

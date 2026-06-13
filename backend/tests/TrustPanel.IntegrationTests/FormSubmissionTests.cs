@@ -313,5 +313,14 @@ public sealed class FormSubmissionTests : IClassFixture<PostgresApiFactory>
         public Task<SentimentResult?> AnalyzeSentimentAsync(
             string content, CancellationToken cancellationToken)
             => Task.FromResult(_result);
+
+        public Task<string?> SuggestReplyAsync(string testimonialContent, string workspaceName, CancellationToken cancellationToken)
+            => Task.FromResult<string?>(null);
+
+        public Task<InsightsReport?> GenerateInsightsAsync(IReadOnlyList<string> recentApprovedContent, string workspaceName, CancellationToken cancellationToken)
+            => Task.FromResult<InsightsReport?>(null);
+
+        public Task<IReadOnlyList<int>?> FilterImportedTestimonialsAsync(IReadOnlyList<string> contents, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<int>?>(null);
     }
 }

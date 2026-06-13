@@ -6,14 +6,15 @@ using StackExchange.Redis;
 using Amazon.Runtime;
 using Amazon.S3;
 using Meilisearch;
+using Resend;
 using TrustPanel.Application.Ai;
 using TrustPanel.Application.Auth;
 using TrustPanel.Application.Billing;
 using TrustPanel.Application.Common;
+using TrustPanel.Application.Email;
 using TrustPanel.Application.Forms;
-using TrustPanel.Application.Workspaces;
-using TrustPanel.Application.Common;
 using TrustPanel.Application.Uploads;
+using TrustPanel.Application.Workspaces;
 using TrustPanel.Infrastructure.Billing;
 using TrustPanel.Infrastructure.Caching;
 using TrustPanel.Infrastructure.Email;
@@ -24,6 +25,8 @@ using TrustPanel.Infrastructure.RateLimiting;
 using TrustPanel.Infrastructure.Search;
 using TrustPanel.Infrastructure.Security;
 using TrustPanel.Infrastructure.Storage;
+using TrustPanel.Application.Ai;
+using Microsoft.Extensions.Logging;
 
 namespace TrustPanel.Infrastructure;
 
@@ -97,11 +100,36 @@ public static class DependencyInjection
                 ? perHour
                 : 5));
         services.AddSingleton<ISubmissionJobDispatcher, SubmissionJobDispatcher>();
-        services.AddScoped<IAiService, NullAiService>();
+
+        var anthropicApiKey = configuration["ANTHROPIC_API_KEY"];
+        if (!string.IsNullOrWhiteSpace(anthropicApiKey))
+        {
+            services.AddHttpClient<IAiService, TrustPanel.Infrastructure.Ai.AnthropicAiService>(client =>
+            {
+                client.DefaultRequestHeaders.Add("x-api-key", anthropicApiKey);
+                client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
+            }).AddTypedClient<IAiService>((client, sp) =>
+            {
+                var logger = sp.GetRequiredService<ILogger<TrustPanel.Infrastructure.Ai.AnthropicAiService>>();
+                var model = configuration["ANTHROPIC_MODEL"] ?? "claude-haiku-4-5-20251001";
+                var insightsModel = configuration["ANTHROPIC_INSIGHTS_MODEL"] ?? "claude-sonnet-4-6";
+                return new TrustPanel.Infrastructure.Ai.AnthropicAiService(client, model, insightsModel, logger);
+            });
+        }
+        else
+        {
+            services.AddScoped<IAiService, NullAiService>();
+        }
+
         services.AddScoped<SendTestimonialThankYouJob>();
         services.AddScoped<NotifyWorkspaceOwnerJob>();
         services.AddScoped<AnalyzeTestimonialSentimentJob>();
         services.AddScoped<ImportTestimonialsCsvJob>();
+        services.AddScoped<AggregateWidgetAnalyticsJob>();
+        services.AddScoped<GenerateWorkspaceInsightsJob>();
+        services.AddScoped<IInsightsJobRunner>(sp => sp.GetRequiredService<GenerateWorkspaceInsightsJob>());
+        services.AddScoped<SuggestReplyJob>();
+        services.AddScoped<IReplyJobRunner>(sp => sp.GetRequiredService<SuggestReplyJob>());
 
         var meilisearchUrl = configuration["MEILISEARCH_URL"];
         if (!string.IsNullOrWhiteSpace(meilisearchUrl))
@@ -142,6 +170,25 @@ public static class DependencyInjection
             services.AddScoped<IBillingService, StripeBillingService>();
         else
             services.AddScoped<IBillingService, NullBillingService>();
+
+        var resendApiKey = configuration["RESEND_API_KEY"];
+        if (!string.IsNullOrWhiteSpace(resendApiKey))
+        {
+            services.AddHttpClient<IResend, ResendClient>(client =>
+            {
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {resendApiKey}");
+                client.BaseAddress = new Uri("https://api.resend.com");
+            });
+            services.AddScoped<IEmailSender, ResendEmailSender>();
+        }
+        else
+        {
+            services.AddScoped<IEmailSender, LoggingEmailSender>();
+        }
+        services.AddSingleton<IEmailTemplateRenderer, SimpleTemplateRenderer>();
+        services.AddScoped<EmailOrchestrationService>();
+        services.AddScoped<UnsubscribeService>();
+        services.AddSingleton<ITokenProtector, DataProtectionTokenProtector>();
 
         return services;
     }

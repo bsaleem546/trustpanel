@@ -1,180 +1,143 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Pill } from "@/components/Stars";
-import { Sparkles, RefreshCw } from "lucide-react";
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import { sentimentTrend, ratingDistribution } from "@/lib/mock-data";
+import { Sparkles, RefreshCw, Loader } from "lucide-react";
+import { aiApi } from "@/lib/api/ai";
+import { useMe, useRequireAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/dashboard/insights")({
   head: () => ({ meta: [{ title: "AI Insights — TrustPanel" }] }),
   component: Insights,
 });
 
-const loves = [
-  { theme: "Speed & Performance", count: 47, score: 0.92, quote: "Setup took 11 minutes. Eleven." },
-  { theme: "Customer Support", count: 38, score: 0.88, quote: "They responded in under an hour with an actual fix." },
-  { theme: "Ease of Use", count: 31, score: 0.85, quote: "My non-technical clients can use this without my help." },
-  { theme: "Branding & Design", count: 22, score: 0.81, quote: "Finally doesn't look like a third-party plugin." },
-];
-
-const concerns = [
-  { theme: "Mobile widget options", count: 8, score: -0.32, quote: "The mobile layout could use more density controls." },
-  { theme: "API documentation", count: 5, score: -0.48, quote: "Docs are a bit thin around webhooks." },
-];
-
-const phrases = [
-  ["easy to use", 142],
-  ["saved us time", 98],
-  ["highly recommend", 87],
-  ["beautiful design", 76],
-  ["set up in minutes", 64],
-  ["just works", 52],
-];
-
 function Insights() {
+  useRequireAuth();
+  const { data: me } = useMe();
+
+  const { data, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["ai-insights", me?.workspaceId],
+    queryFn: () => aiApi.insights(me!.workspaceId!),
+    enabled: !!me?.workspaceId,
+    staleTime: 5 * 60_000,
+    refetchInterval: (query) => {
+      // Poll every 10s while still generating
+      const d = query.state.data as { generating?: boolean } | undefined;
+      return d?.generating ? 10_000 : false;
+    },
+  });
+
+  const generating = (data as { generating?: boolean } | undefined)?.generating;
+  const insights = generating ? null : (data as Record<string, unknown> | undefined);
+
   return (
     <DashboardLayout
-      title="Your testimonial insights"
+      title="AI Insights"
       action={
-        <>
-          <span className="text-xs" style={{ color: "var(--subtle)" }}>
-            Last generated 2h ago
-          </span>
-          <button className="tp-btn tp-btn-ghost">
-            <RefreshCw size={14} /> Regenerate
-          </button>
-        </>
+        <button className="tp-btn tp-btn-ghost" onClick={() => refetch()} disabled={isFetching}>
+          <RefreshCw size={14} className={isFetching ? "animate-spin" : ""} /> Refresh
+        </button>
       }
     >
-      <Section title="What customers love" tone="success">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {loves.map((l) => (
-            <ThemeCard key={l.theme} theme={l.theme} count={l.count} score={l.score} quote={l.quote} positive />
-          ))}
+      {isLoading && (
+        <div className="flex items-center gap-3 text-sm" style={{ color: "var(--subtle)" }}>
+          <Loader size={16} className="animate-spin" /> Loading insights…
         </div>
-      </Section>
+      )}
 
-      <Section title="Common language">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="tp-card p-6 flex flex-wrap gap-2 content-start" style={{ minHeight: 220 }}>
-            {phrases.map(([w, n], i) => (
-              <span
-                key={w as string}
-                style={{
-                  fontSize: 12 + (n as number) / 14,
-                  color: i % 2 === 0 ? "var(--primary-light)" : "var(--info)",
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  background: "var(--surface)",
-                }}
-              >
-                {w}
-              </span>
-            ))}
-          </div>
-          <div className="tp-card p-6">
-            <div className="text-xs uppercase tracking-wider mb-4" style={{ color: "var(--subtle)" }}>
-              Top phrases
-            </div>
-            <div className="space-y-3">
-              {phrases.map(([w, n]) => (
-                <div key={w as string}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>{w}</span>
-                    <span style={{ color: "var(--subtle)" }}>{n}</span>
-                  </div>
-                  <div className="h-1.5 rounded-full" style={{ background: "var(--border)" }}>
-                    <div className="h-full rounded-full" style={{ background: "var(--primary)", width: `${((n as number) / 142) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+      {generating && !isLoading && (
+        <div className="tp-card p-10 text-center">
+          <Sparkles size={32} className="mx-auto mb-4" style={{ color: "var(--primary-light)" }} />
+          <div className="font-semibold text-lg mb-2">Generating insights…</div>
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+            We're analysing your testimonials with AI. This usually takes a minute.
+          </p>
+          <div className="mt-4 flex items-center justify-center gap-2 text-xs" style={{ color: "var(--subtle)" }}>
+            <Loader size={12} className="animate-spin" /> Checking every 10 seconds…
           </div>
         </div>
-      </Section>
+      )}
 
-      <Section title="Areas to address" tone="warning">
-        <div className="grid md:grid-cols-2 gap-4">
-          {concerns.map((c) => (
-            <ThemeCard key={c.theme} theme={c.theme} count={c.count} score={c.score} quote={c.quote} />
-          ))}
-        </div>
-      </Section>
-
-      <Section title="Rating distribution">
-        <div className="tp-card p-6 space-y-3">
-          {ratingDistribution.map((r) => (
-            <div key={r.stars} className="flex items-center gap-4">
-              <span className="w-10 text-sm font-medium" style={{ color: "var(--warning)" }}>
-                {r.stars}
-              </span>
-              <div className="flex-1 h-3 rounded-full" style={{ background: "var(--border)" }}>
-                <div className="h-full rounded-full" style={{ background: "var(--primary)", width: `${r.pct}%` }} />
+      {insights && (
+        <div className="space-y-8">
+          {insights.summary && (
+            <Section title="Summary">
+              <div className="tp-card p-6 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                {insights.summary as string}
               </div>
-              <span className="w-12 text-right text-sm" style={{ color: "var(--muted-foreground)" }}>
-                {r.pct}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </Section>
+            </Section>
+          )}
 
-      <Section title="Sentiment over time">
-        <div className="tp-card p-5">
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={sentimentTrend}>
-              <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="month" stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis domain={[-1, 1]} stroke="var(--subtle)" fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
-              <Line type="monotone" dataKey="score" stroke="var(--primary)" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+          {Array.isArray(insights.topThemes) && insights.topThemes.length > 0 && (
+            <Section title="Top themes">
+              <div className="flex flex-wrap gap-2">
+                {(insights.topThemes as string[]).map((t) => (
+                  <Pill key={t} tone="primary">{t}</Pill>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {insights.sentimentSummary && (
+            <Section title="Sentiment">
+              <div className="tp-card p-6 text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
+                {insights.sentimentSummary as string}
+              </div>
+            </Section>
+          )}
+
+          {Array.isArray(insights.recommendations) && insights.recommendations.length > 0 && (
+            <Section title="Recommendations">
+              <div className="tp-card p-6">
+                <ul className="space-y-3">
+                  {(insights.recommendations as string[]).map((r, i) => (
+                    <li key={i} className="flex gap-3 text-sm">
+                      <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium"
+                        style={{ background: "var(--primary-soft)", color: "var(--primary-light)" }}>
+                        {i + 1}
+                      </span>
+                      <span style={{ color: "var(--muted-foreground)" }}>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Section>
+          )}
+
+          {/* Render any other top-level keys as raw JSON for future-proofing */}
+          {Object.entries(insights)
+            .filter(([k]) => !["summary", "topThemes", "sentimentSummary", "recommendations"].includes(k))
+            .map(([k, v]) => (
+              <Section key={k} title={k.replace(/([A-Z])/g, " $1").trim()}>
+                <div className="tp-card p-4 font-mono text-xs overflow-auto" style={{ color: "var(--muted-foreground)" }}>
+                  {JSON.stringify(v, null, 2)}
+                </div>
+              </Section>
+            ))}
         </div>
-      </Section>
+      )}
+
+      {!isLoading && !generating && !insights && (
+        <div className="tp-card p-10 text-center">
+          <Sparkles size={32} className="mx-auto mb-4" style={{ color: "var(--subtle)" }} />
+          <div className="font-semibold mb-2">No insights yet</div>
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+            Insights are generated automatically as testimonials come in.
+          </p>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
 
-function Section({ title, tone, children }: { title: string; tone?: "success" | "warning"; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-10">
-      <div className="flex items-center gap-2 mb-4">
-        <Sparkles size={14} style={{ color: tone === "warning" ? "var(--warning)" : "var(--primary-light)" }} />
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles size={14} style={{ color: "var(--primary-light)" }} />
         <h2 className="text-lg font-semibold">{title}</h2>
       </div>
       {children}
-    </div>
-  );
-}
-
-function ThemeCard({ theme, count, score, quote, positive }: { theme: string; count: number; score: number; quote: string; positive?: boolean }) {
-  return (
-    <div className="tp-card p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <div className="font-semibold">{theme}</div>
-          <div className="text-xs mt-0.5" style={{ color: "var(--subtle)" }}>
-            {count} mentions
-          </div>
-        </div>
-        <Pill tone={positive ? "success" : "danger"}>
-          {score > 0 ? "+" : ""}
-          {score.toFixed(2)}
-        </Pill>
-      </div>
-      <p className="text-sm italic" style={{ color: "var(--muted-foreground)" }}>
-        "{quote}"
-      </p>
-      <div className="mt-4 h-1 rounded-full" style={{ background: "var(--border)" }}>
-        <div
-          className="h-full rounded-full"
-          style={{
-            background: positive ? "var(--success)" : "var(--danger)",
-            width: `${Math.abs(score) * 100}%`,
-          }}
-        />
-      </div>
     </div>
   );
 }

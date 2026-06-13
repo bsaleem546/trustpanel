@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -38,6 +39,11 @@ import { Route as CollectWorkspaceSlugFormSlugRouteImport } from './routes/colle
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/forms': typeof DashboardFormsRouteWithChildren
   '/dashboard/imports': typeof DashboardImportsRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/forms': typeof DashboardFormsRouteWithChildren
   '/dashboard/imports': typeof DashboardImportsRoute
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/forms': typeof DashboardFormsRouteWithChildren
   '/dashboard/imports': typeof DashboardImportsRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/confirm-email'
     | '/auth/callback'
+    | '/unsubscribe'
     | '/dashboard/analytics'
     | '/dashboard/forms'
     | '/dashboard/imports'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/confirm-email'
     | '/auth/callback'
+    | '/unsubscribe'
     | '/dashboard/analytics'
     | '/dashboard/forms'
     | '/dashboard/imports'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/confirm-email'
     | '/auth/callback'
+    | '/unsubscribe'
     | '/dashboard/analytics'
     | '/dashboard/forms'
     | '/dashboard/imports'
@@ -342,6 +354,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ConfirmEmailRoute: typeof ConfirmEmailRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   CollectWorkspaceSlugFormSlugRoute: typeof CollectWorkspaceSlugFormSlugRoute
 }
 
@@ -522,6 +535,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -595,6 +615,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   ConfirmEmailRoute: ConfirmEmailRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   CollectWorkspaceSlugFormSlugRoute: CollectWorkspaceSlugFormSlugRoute,
 }
 export const routeTree = rootRouteImport
