@@ -10,9 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardWallRouteImport } from './routes/dashboard.wall'
@@ -34,6 +38,26 @@ import { Route as CollectWorkspaceSlugFormSlugRouteImport } from './routes/colle
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
+  id: '/confirm-email',
+  path: '/confirm-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -148,6 +172,10 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/confirm-email': typeof ConfirmEmailRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/forms': typeof DashboardFormsRouteWithChildren
   '/dashboard/imports': typeof DashboardImportsRoute
@@ -171,6 +199,10 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/confirm-email': typeof ConfirmEmailRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/forms': typeof DashboardFormsRouteWithChildren
   '/dashboard/imports': typeof DashboardImportsRoute
@@ -195,6 +227,10 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/confirm-email': typeof ConfirmEmailRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/forms': typeof DashboardFormsRouteWithChildren
   '/dashboard/imports': typeof DashboardImportsRoute
@@ -220,6 +256,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/pricing'
     | '/register'
+    | '/reset-password'
+    | '/forgot-password'
+    | '/confirm-email'
+    | '/auth/callback'
     | '/dashboard/analytics'
     | '/dashboard/forms'
     | '/dashboard/imports'
@@ -243,6 +283,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/pricing'
     | '/register'
+    | '/reset-password'
+    | '/forgot-password'
+    | '/confirm-email'
+    | '/auth/callback'
     | '/dashboard/analytics'
     | '/dashboard/forms'
     | '/dashboard/imports'
@@ -266,6 +310,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/pricing'
     | '/register'
+    | '/reset-password'
+    | '/forgot-password'
+    | '/confirm-email'
+    | '/auth/callback'
     | '/dashboard/analytics'
     | '/dashboard/forms'
     | '/dashboard/imports'
@@ -290,6 +338,10 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  ConfirmEmailRoute: typeof ConfirmEmailRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   CollectWorkspaceSlugFormSlugRoute: typeof CollectWorkspaceSlugFormSlugRoute
 }
 
@@ -442,6 +494,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectWorkspaceSlugFormSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirm-email': {
+      id: '/confirm-email'
+      path: '/confirm-email'
+      fullPath: '/confirm-email'
+      preLoaderRoute: typeof ConfirmEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -511,6 +591,10 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  ConfirmEmailRoute: ConfirmEmailRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   CollectWorkspaceSlugFormSlugRoute: CollectWorkspaceSlugFormSlugRoute,
 }
 export const routeTree = rootRouteImport

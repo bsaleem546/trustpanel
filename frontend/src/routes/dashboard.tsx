@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Avatar, Stars, Pill } from "@/components/Stars";
 import { testimonials, activity } from "@/lib/mock-data";
+import { useMe, useRequireAuth } from "@/lib/auth";
 import { Send, LayoutGrid, ArrowRight, TrendingUp, Inbox, Star, Eye } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -16,11 +17,20 @@ const metrics = [
   { label: "Widget impressions", value: "12,840", delta: "+24.1%", icon: Eye },
 ];
 
+function greet(email?: string) {
+  const h = new Date().getHours();
+  const time = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  const name = email ? email.split("@")[0] : "";
+  return name ? `${time}, ${name}` : time;
+}
+
 function DashboardHome() {
+  useRequireAuth();
+  const { data: me } = useMe();
   const pending = testimonials.filter((t) => t.status === "pending");
   return (
     <DashboardLayout
-      title="Good morning, Alex"
+      title={greet(me?.email)}
       action={
         <>
           <button className="tp-btn tp-btn-ghost">

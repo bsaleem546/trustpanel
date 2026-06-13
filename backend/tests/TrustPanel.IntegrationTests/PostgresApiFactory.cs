@@ -8,6 +8,7 @@ using Testcontainers.PostgreSql;
 using TrustPanel.Application.Auth;
 using TrustPanel.Application.Common;
 using TrustPanel.Application.Workspaces;
+using TrustPanel.Domain.Testimonials;
 using TrustPanel.Infrastructure.Persistence;
 
 namespace TrustPanel.IntegrationTests;
@@ -23,6 +24,7 @@ public class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     public FakeDnsResolver Dns { get; } = new();
     public CapturingJobScheduler Jobs { get; } = new();
     public FakeTurnstileVerifier Turnstile { get; } = new();
+    public FakeSearchIndexer SearchIndexer { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -38,6 +40,8 @@ public class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.AddSingleton<IJobScheduler>(Jobs);
             services.RemoveAll<ITurnstileVerifier>();
             services.AddSingleton<ITurnstileVerifier>(Turnstile);
+            services.RemoveAll<ISearchIndexer>();
+            services.AddSingleton<ISearchIndexer>(SearchIndexer);
         });
     }
 
@@ -103,6 +107,30 @@ public sealed class FakeTurnstileVerifier : ITurnstileVerifier
 
     public Task<bool> VerifyAsync(string? token, string? remoteIp, CancellationToken cancellationToken)
         => Task.FromResult(token is null || !FailingTokens.Contains(token));
+}
+
+/// <summary>Captures indexer calls; SearchAsync returns null (SQL fallback) by default.</summary>
+public sealed class FakeSearchIndexer : ISearchIndexer
+{
+    public List<IReadOnlyList<Testimonial>> IndexedBatches { get; } = [];
+    public List<IReadOnlyList<Guid>> RemovedBatches { get; } = [];
+    public IReadOnlyList<Guid>? SearchResults { get; set; } = null;
+
+    public Task IndexAsync(IReadOnlyList<Testimonial> testimonials, CancellationToken cancellationToken)
+    {
+        IndexedBatches.Add(testimonials);
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveAsync(IReadOnlyList<Guid> testimonialIds, CancellationToken cancellationToken)
+    {
+        RemovedBatches.Add(testimonialIds);
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<Guid>?> SearchAsync(
+        Guid workspaceId, string query, int limit, CancellationToken cancellationToken)
+        => Task.FromResult(SearchResults);
 }
 
 /// <summary>Records enqueued background jobs instead of running them.</summary>

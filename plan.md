@@ -394,15 +394,15 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Infrastructure/Persistence/Interceptors/SearchIndexSaveChangesInterceptor.cs`
 - Create: `src/TrustPanel.Application/Common/Behaviors/AuditLogPostProcessor.cs`
 
-- [ ] Implement inbox query for pending testimonials.
-- [ ] Implement approve, reject, feature, unfeature, tag, untag, delete, and edit commands.
-- [ ] Implement batch endpoints for bulk approve/reject/feature/tag/delete.
-- [ ] Record content edits with `EditedAt` and immutable `AuditLog` entries.
-- [ ] Implement CSV import as a Hangfire job.
-- [ ] Implement import source model for Twitter/X, Google Business Profile, G2, Trustpilot, and CSV.
-- [ ] Add Meilisearch indexing through EF Core SaveChanges interceptor.
-- [ ] Add full-text testimonial search endpoint.
-- [ ] Add tests for moderation transitions, bulk commands, audit logs, and search indexing dispatch.
+- [x] Implement inbox query for pending testimonials.
+- [x] Implement approve, reject, feature, unfeature, tag, untag, delete, and edit commands.
+- [x] Implement batch endpoints for bulk approve/reject/feature/tag/delete.
+- [x] Record content edits with `EditedAt` and immutable `AuditLog` entries.
+- [x] Implement CSV import as a Hangfire job.
+- [x] Implement import source model for Twitter/X, Google Business Profile, G2, Trustpilot, and CSV.
+- [x] Add Meilisearch indexing through EF Core SaveChanges interceptor.
+- [x] Add full-text testimonial search endpoint.
+- [x] Add tests for moderation transitions, bulk commands, audit logs, and search indexing dispatch.
 
 ### Phase 6: Video Upload and Processing
 
@@ -411,13 +411,13 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Infrastructure/Storage/R2StorageService.cs`
 - Create: `src/TrustPanel.Infrastructure/Jobs/ProcessVideoJob.cs`
 
-- [ ] Implement pre-signed Cloudflare R2 upload URL creation.
-- [ ] Enforce server-side MIME allowlist and max upload size before issuing upload URLs.
-- [ ] Store only private R2 object keys in the database.
-- [ ] Implement pre-signed read URLs with short TTL.
-- [ ] Implement Hangfire FFmpeg job for trim, compression, and thumbnail generation.
-- [ ] Ensure video bytes never route through Kestrel.
-- [ ] Add tests for upload policy validation, private URL generation, and job enqueueing.
+- [x] Implement pre-signed Cloudflare R2 upload URL creation.
+- [x] Enforce server-side MIME allowlist and max upload size before issuing upload URLs.
+- [x] Store only private R2 object keys in the database.
+- [x] Implement pre-signed read URLs with short TTL.
+- [x] Implement Hangfire FFmpeg job for trim, compression, and thumbnail generation.
+- [x] Ensure video bytes never route through Kestrel.
+- [x] Add tests for upload policy validation, private URL generation, and job enqueueing.
 
 ### Phase 7: Widget Builder and Public Widget Data
 
@@ -426,14 +426,14 @@ Any new provider, database, queue, cache, signing key, webhook secret, OAuth cre
 - Create: `src/TrustPanel.Api/Endpoints/PublicWidgetEndpoints.cs`
 - Create: `src/TrustPanel.Application/Widgets/**`
 
-- [ ] Implement widget CRUD with six types: carousel, masonry grid/wall of love, badge, popup, slider, single featured card.
-- [ ] Implement widget settings for card style, colors, font size, animation, and dark mode.
-- [ ] Implement filters: tags, minimum rating, featured-only, selected testimonial IDs, and source platform.
-- [ ] Implement custom CSS field.
-- [ ] Implement public endpoint `GET /api/public/widget/{id}` returning the required API response envelope with minimal approved testimonial data inside `data`.
-- [ ] Cache widget public response in Redis and set CDN-friendly headers for 60-second Cloudflare TTL.
-- [ ] Bust widget cache when widget settings or related approved testimonials change.
-- [ ] Add tests for filtering, tenant isolation, public payload shape, and cache invalidation.
+- [x] Implement widget CRUD with six types: carousel, masonry grid/wall of love, badge, popup, slider, single featured card.
+- [x] Implement widget settings for card style, colors, font size, animation, and dark mode.
+- [x] Implement filters: tags, minimum rating, featured-only, selected testimonial IDs, and source platform.
+- [x] Implement custom CSS field.
+- [x] Implement public endpoint `GET /api/public/widget/{id}` returning the required API response envelope with minimal approved testimonial data inside `data`.
+- [x] Cache widget public response in Redis and set CDN-friendly headers for 60-second Cloudflare TTL.
+- [x] Bust widget cache when widget settings or related approved testimonials change.
+- [x] Add tests for filtering, tenant isolation, public payload shape, and cache invalidation.
 
 ### Phase 8: Billing and Plan Enforcement
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TrustPanel.Application.Common;
 using TrustPanel.Application.Workspaces;
 using TrustPanel.Domain.Testimonials;
+#pragma warning disable CA1862 // Use StringComparison instead of ToLower — EF Core translates ToLower to SQL
 
 namespace TrustPanel.Application.Testimonials;
 
@@ -126,12 +127,12 @@ public sealed class SearchTestimonialsQueryHandler
         }
         else
         {
-            // Search backend unavailable: SQL substring fallback.
-            var pattern = $"%{request.Query}%";
+            // Search backend unavailable: SQL substring fallback (case-insensitive via ToLower).
+            var lowerQuery = request.Query.ToLowerInvariant();
             testimonials = await _db.Testimonials
                 .Where(t => t.WorkspaceId == request.WorkspaceId)
-                .Where(t => EF.Functions.ILike(t.Content, pattern)
-                    || EF.Functions.ILike(t.Submitter.Name, pattern))
+                .Where(t => t.Content.ToLower().Contains(lowerQuery)
+                    || t.Submitter.Name.ToLower().Contains(lowerQuery))
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(limit)
                 .ToListAsync(cancellationToken);

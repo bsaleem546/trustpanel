@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using TrustPanel.Application.Auth;
+using TrustPanel.Application.Common;
 using TrustPanel.Application.Common.Behaviors;
 using TrustPanel.Application.Workspaces;
 
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<AuthSessionService>();
         services.AddScoped<WorkspaceAccess>();
         services.AddScoped<DomainVerificationService>();
+        services.AddScoped<IAuditTrail, AuditTrail>();
 
         return services;
     }

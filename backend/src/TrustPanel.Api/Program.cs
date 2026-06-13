@@ -151,6 +151,12 @@ app.MapAuthEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapFormEndpoints();
 app.MapPublicFormEndpoints();
+app.MapTestimonialEndpoints();
+app.MapUploadEndpoints();
+app.MapWidgetEndpoints();
+app.MapPublicWidgetEndpoints();
+app.MapBillingEndpoints();
+app.MapStripeWebhookEndpoints();
 
 if (hangfireEnabled)
 {

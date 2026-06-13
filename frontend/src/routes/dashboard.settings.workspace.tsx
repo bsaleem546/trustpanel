@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Check, Upload } from "lucide-react";
+import { workspacesApi } from "@/lib/api/workspaces";
+import { useCurrentWorkspace, useRequireAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/dashboard/settings/workspace")({
   head: () => ({ meta: [{ title: "Workspace settings — TrustPanel" }] }),
@@ -11,7 +14,68 @@ export const Route = createFileRoute("/dashboard/settings/workspace")({
 const tabs = ["General", "Branding", "Domain", "Notifications"] as const;
 
 function WorkspaceSettings() {
+  useRequireAuth();
+  const { data: workspace } = useCurrentWorkspace();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<(typeof tabs)[number]>("General");
+
+  // General tab state
+  const [wsName, setWsName] = useState("");
+  useEffect(() => { if (workspace?.name) setWsName(workspace.name); }, [workspace?.name]);
+
+  // Branding tab state
+  const [primaryColor, setPrimaryColor] = useState("#7c6af7");
+  const [secondaryColor, setSecondaryColor] = useState("#a594f9");
+  const [emailFromName, setEmailFromName] = useState("");
+  const [emailFromAddress, setEmailFromAddress] = useState("");
+  useEffect(() => {
+    if (workspace) {
+      if (workspace.branding.primaryColor) setPrimaryColor(workspace.branding.primaryColor);
+      if (workspace.branding.secondaryColor) setSecondaryColor(workspace.branding.secondaryColor);
+      if (workspace.emailFrom.fromName) setEmailFromName(workspace.emailFrom.fromName);
+      if (workspace.emailFrom.fromEmail) setEmailFromAddress(workspace.emailFrom.fromEmail);
+    }
+  }, [workspace]);
+
+  // Domain tab state
+  const [domain, setDomain] = useState("");
+  useEffect(() => { if (workspace?.customDomain) setDomain(workspace.customDomain); }, [workspace?.customDomain]);
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["workspace"] });
+
+  const updateName = useMutation({
+    mutationFn: () => workspacesApi.update(workspace!.id, wsName),
+    onSuccess: invalidate,
+  });
+
+  const updateBranding = useMutation({
+    mutationFn: () => workspacesApi.updateBranding(workspace!.id, {
+      primaryColor, secondaryColor, emailFromName, emailFromAddress,
+    }),
+    onSuccess: invalidate,
+  });
+
+  const setCustomDomain = useMutation({
+    mutationFn: () => workspacesApi.setCustomDomain(workspace!.id, domain),
+    onSuccess: invalidate,
+  });
+
+  const verifyDomain = useMutation({
+    mutationFn: () => workspacesApi.verifyCustomDomain(workspace!.id),
+    onSuccess: invalidate,
+  });
+
+  const removeWorkspace = useMutation({
+    mutationFn: () => workspacesApi.remove(workspace!.id),
+  });
+
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  async function save(fn: () => Promise<unknown>) {
+    setSaveMsg(null);
+    try { await fn(); setSaveMsg("Saved."); setTimeout(() => setSaveMsg(null), 2000); }
+    catch { setSaveMsg("Failed to save."); }
+  }
+
   return (
     <DashboardLayout title="Workspace settings">
       <div className="flex gap-1 mb-6 border-b" style={{ borderColor: "var(--border)" }}>
@@ -35,34 +99,30 @@ function WorkspaceSettings() {
           <>
             <Card title="Workspace identity">
               <Field label="Workspace name">
-                <input className="tp-input" defaultValue="Northwind Agency" />
+                <input className="tp-input" value={wsName} onChange={(e) => setWsName(e.target.value)} />
               </Field>
               <Field label="Workspace slug">
                 <div className="flex items-center gap-2 text-sm">
                   <span style={{ color: "var(--subtle)" }}>trustpanel.com/c/</span>
-                  <input className="tp-input" defaultValue="northwind" />
+                  <input className="tp-input" value={workspace?.slug ?? ""} readOnly style={{ color: "var(--subtle)" }} />
                 </div>
               </Field>
-              <Field label="Timezone">
-                <select className="tp-input">
-                  <option>America/Los_Angeles</option>
-                  <option>Europe/London</option>
-                  <option>UTC</option>
-                </select>
-              </Field>
-              <Field label="Default language">
-                <select className="tp-input">
-                  <option>English</option>
-                  <option>Spanish</option>
-                  <option>French</option>
-                </select>
-              </Field>
+              {saveMsg && <p className="text-xs" style={{ color: saveMsg === "Saved." ? "var(--success)" : "var(--danger)" }}>{saveMsg}</p>}
+              <button className="tp-btn tp-btn-primary" onClick={() => save(() => updateName.mutateAsync())} disabled={updateName.isPending || !workspace}>
+                {updateName.isPending ? "Saving…" : "Save changes"}
+              </button>
             </Card>
             <Card title="Danger zone" tone="danger">
               <p className="text-sm mb-3" style={{ color: "var(--muted-foreground)" }}>
                 Deleting your workspace removes all testimonials, widgets, and forms permanently.
               </p>
-              <button className="tp-btn tp-btn-danger">Delete workspace</button>
+              <button
+                className="tp-btn tp-btn-danger"
+                disabled={removeWorkspace.isPending || !workspace}
+                onClick={() => { if (confirm("Delete this workspace permanently?")) removeWorkspace.mutate(); }}
+              >
+                Delete workspace
+              </button>
             </Card>
           </>
         )}
@@ -79,92 +139,55 @@ function WorkspaceSettings() {
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Primary color">
                   <div className="flex gap-2">
-                    <input type="color" defaultValue="#7c6af7" className="w-10 h-9 border-0 rounded cursor-pointer" />
-                    <input className="tp-input font-mono" defaultValue="#7c6af7" />
+                    <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-10 h-9 border-0 rounded cursor-pointer" />
+                    <input className="tp-input font-mono" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} />
                   </div>
                 </Field>
                 <Field label="Secondary color">
                   <div className="flex gap-2">
-                    <input type="color" defaultValue="#a594f9" className="w-10 h-9 border-0 rounded cursor-pointer" />
-                    <input className="tp-input font-mono" defaultValue="#a594f9" />
+                    <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-10 h-9 border-0 rounded cursor-pointer" />
+                    <input className="tp-input font-mono" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} />
                   </div>
                 </Field>
               </div>
             </Card>
-            <Card title="Typography">
-              <Field label="Font">
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { n: "Space Grotesk", f: "'Space Grotesk', sans-serif", selected: true },
-                    { n: "Inter", f: "Inter, sans-serif" },
-                    { n: "Manrope", f: "Manrope, sans-serif" },
-                    { n: "Plus Jakarta", f: "'Plus Jakarta Sans', sans-serif" },
-                    { n: "DM Sans", f: "'DM Sans', sans-serif" },
-                    { n: "Geist", f: "Geist, sans-serif" },
-                  ].map((f) => (
-                    <button
-                      key={f.n}
-                      className="tp-card p-3 text-left"
-                      style={{
-                        background: f.selected ? "var(--primary-soft)" : "var(--surface)",
-                        borderColor: f.selected ? "var(--primary)" : "var(--border)",
-                      }}
-                    >
-                      <div className="font-medium" style={{ fontFamily: f.f }}>
-                        {f.n}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </Field>
-            </Card>
             <Card title="Email sender">
               <Field label="Sender name">
-                <input className="tp-input" defaultValue="Northwind Agency" />
+                <input className="tp-input" value={emailFromName} onChange={(e) => setEmailFromName(e.target.value)} />
               </Field>
               <Field label="Sender address">
-                <input className="tp-input" defaultValue="hello@northwind.agency" />
+                <input className="tp-input" value={emailFromAddress} onChange={(e) => setEmailFromAddress(e.target.value)} />
               </Field>
             </Card>
+            {saveMsg && <p className="text-xs" style={{ color: saveMsg === "Saved." ? "var(--success)" : "var(--danger)" }}>{saveMsg}</p>}
+            <button className="tp-btn tp-btn-primary" onClick={() => save(() => updateBranding.mutateAsync())} disabled={updateBranding.isPending || !workspace}>
+              {updateBranding.isPending ? "Saving…" : "Save branding"}
+            </button>
           </>
         )}
 
         {tab === "Domain" && (
           <Card title="Custom domain">
             <Field label="Domain">
-              <input className="tp-input font-mono" placeholder="testimonials.yoursite.com" defaultValue="reviews.northwind.agency" />
+              <input className="tp-input font-mono" placeholder="testimonials.yoursite.com" value={domain} onChange={(e) => setDomain(e.target.value)} />
             </Field>
-            <div className="tp-card p-3 flex items-center gap-2" style={{ background: "rgba(52,211,153,0.08)", borderColor: "var(--success)" }}>
-              <Check size={14} style={{ color: "var(--success)" }} />
-              <span className="text-sm" style={{ color: "var(--success)" }}>
-                Verified · SSL active
-              </span>
-            </div>
-            <Field label="DNS records">
-              <div className="tp-card overflow-hidden">
-                <table className="w-full text-xs font-mono">
-                  <thead style={{ background: "var(--surface)" }}>
-                    <tr>
-                      {["Type", "Host", "Value"].map((h) => (
-                        <th key={h} className="px-3 py-2 text-left">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ borderTop: "1px solid var(--border)" }}>
-                      <td className="px-3 py-2">CNAME</td>
-                      <td className="px-3 py-2">reviews</td>
-                      <td className="px-3 py-2" style={{ color: "var(--primary-light)" }}>
-                        cname.trustpanel.com
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+            {workspace?.domainVerifiedAt && (
+              <div className="tp-card p-3 flex items-center gap-2" style={{ background: "rgba(52,211,153,0.08)", borderColor: "var(--success)" }}>
+                <Check size={14} style={{ color: "var(--success)" }} />
+                <span className="text-sm" style={{ color: "var(--success)" }}>
+                  Verified · SSL active
+                </span>
               </div>
-            </Field>
-            <button className="tp-btn tp-btn-ghost">Re-verify domain</button>
+            )}
+            {saveMsg && <p className="text-xs" style={{ color: saveMsg === "Saved." ? "var(--success)" : "var(--danger)" }}>{saveMsg}</p>}
+            <div className="flex gap-2">
+              <button className="tp-btn tp-btn-primary" onClick={() => save(() => setCustomDomain.mutateAsync())} disabled={setCustomDomain.isPending || !workspace || !domain}>
+                {setCustomDomain.isPending ? "Saving…" : "Save domain"}
+              </button>
+              <button className="tp-btn tp-btn-ghost" onClick={() => save(() => verifyDomain.mutateAsync())} disabled={verifyDomain.isPending || !workspace}>
+                {verifyDomain.isPending ? "Verifying…" : "Re-verify domain"}
+              </button>
+            </div>
           </Card>
         )}
 
