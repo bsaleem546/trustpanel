@@ -25,7 +25,6 @@ using TrustPanel.Infrastructure.RateLimiting;
 using TrustPanel.Infrastructure.Search;
 using TrustPanel.Infrastructure.Security;
 using TrustPanel.Infrastructure.Storage;
-using TrustPanel.Application.Ai;
 using Microsoft.Extensions.Logging;
 
 namespace TrustPanel.Infrastructure;
@@ -49,8 +48,15 @@ public static class DependencyInjection
                 if (interceptor is not null)
                     options.AddInterceptors(interceptor);
             });
-            services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
         }
+        else
+        {
+            // No connection string: register an in-memory AppDbContext so that
+            // Minimal API endpoint parameter inference succeeds (FoundationTests).
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase("trustpanel-test"));
+        }
+        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
         services
             .AddIdentityCore<ApplicationUser>(options =>

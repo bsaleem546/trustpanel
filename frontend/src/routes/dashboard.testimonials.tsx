@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Stars, Pill } from "@/components/Stars";
@@ -34,8 +34,18 @@ function TestimonialsInbox() {
   const [tab, setTab] = useState<"all" | TestimonialStatus>("all");
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const { data, isLoading } = useQuery({
+  // Debounce search by 400ms.
+  useEffect(() => {
+    const t = setTimeout(() => setSearchQuery(searchInput.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const isSearching = searchQuery.length > 0;
+
+  const { data: listData, isLoading: listLoading } = useQuery({
     queryKey: ["testimonials", me?.workspaceId, tab, page],
     queryFn: () =>
       testimonialsApi.list(me!.workspaceId!, {
@@ -43,9 +53,19 @@ function TestimonialsInbox() {
         page,
         pageSize: 25,
       }),
-    enabled: !!me?.workspaceId,
+    enabled: !!me?.workspaceId && !isSearching,
     staleTime: 30_000,
   });
+
+  const { data: searchData, isLoading: searchLoading } = useQuery({
+    queryKey: ["testimonials-search", me?.workspaceId, searchQuery],
+    queryFn: () => testimonialsApi.search(me!.workspaceId!, searchQuery),
+    enabled: !!me?.workspaceId && isSearching,
+    staleTime: 10_000,
+  });
+
+  const data = isSearching ? searchData : listData;
+  const isLoading = isSearching ? searchLoading : listLoading;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["testimonials"] });
@@ -74,7 +94,12 @@ function TestimonialsInbox() {
         <div className="flex flex-wrap gap-2 items-center">
           <div className="relative flex-1 min-w-[220px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--subtle)" }} />
-            <input className="tp-input pl-9" placeholder="Search by name, company, or text…" />
+            <input
+              className="tp-input pl-9"
+              placeholder="Search by name, company, or text…"
+              value={searchInput}
+              onChange={(e) => { setSearchInput(e.target.value); setPage(1); setSelected([]); }}
+            />
           </div>
           <button className="tp-btn tp-btn-ghost text-xs" style={{ padding: "8px 10px" }}>
             <Filter size={12} /> Filter

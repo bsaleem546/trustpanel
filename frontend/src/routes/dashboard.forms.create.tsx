@@ -1,15 +1,28 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Stars } from "@/components/Stars";
+import { formsApi, type SubmissionType } from "@/lib/api/forms";
+import { useMe, useRequireAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/dashboard/forms/create")({
   head: () => ({ meta: [{ title: "Build form — TrustPanel" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({ edit: s.edit as string | undefined }),
   component: FormBuilder,
 });
 
-function Toggle({ label, defaultChecked, locked }: { label: string; defaultChecked?: boolean; locked?: boolean }) {
-  const [on, setOn] = useState(!!defaultChecked);
+function Toggle({
+  label,
+  checked,
+  onChange,
+  locked,
+}: {
+  label: string;
+  checked: boolean;
+  onChange?: (v: boolean) => void;
+  locked?: boolean;
+}) {
   return (
     <label className="flex items-center justify-between py-2.5">
       <span className="text-sm">
@@ -22,14 +35,14 @@ function Toggle({ label, defaultChecked, locked }: { label: string; defaultCheck
       </span>
       <button
         type="button"
-        onClick={() => !locked && setOn(!on)}
+        onClick={() => !locked && onChange?.(!checked)}
         disabled={locked}
         className="w-9 h-5 rounded-full transition-colors relative"
-        style={{ background: on || locked ? "var(--primary)" : "var(--border)" }}
+        style={{ background: checked || locked ? "var(--primary)" : "var(--border)" }}
       >
         <span
           className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
-          style={{ left: on || locked ? 18 : 2 }}
+          style={{ left: checked || locked ? 18 : 2 }}
         />
       </button>
     </label>
@@ -48,46 +61,92 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function FormBuilder() {
+  useRequireAuth();
+  const { data: me } = useMe();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { edit: editId } = useSearch({ from: "/dashboard/forms/create" });
+  const isEditing = !!editId;
+
   const [previewStep, setPreviewStep] = useState<"rating" | "submission" | "thanks">("rating");
-  const [submissionType, setSubmissionType] = useState<"text" | "video" | "both">("both");
+  const [name, setName] = useState("Homepage testimonial");
+  const [submissionType, setSubmissionType] = useState<SubmissionType>("Both");
+
+  // Pre-fill when editing.
+  useQuery({
+    queryKey: ["form", editId],
+    queryFn: () => formsApi.get(editId!),
+    enabled: !!editId,
+    staleTime: Infinity,
+    select: (form) => {
+      setName(form.name);
+      setSubmissionType(form.allowedSubmissionType);
+      return form;
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: () =>
+      isEditing
+        ? formsApi.update(editId!, { name, allowedSubmissionType: submissionType, isActive: true })
+        : formsApi.create({ name, allowedSubmissionType: submissionType, isActive: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["forms"] });
+      navigate({ to: "/dashboard/forms" });
+    },
+  });
+
+  const workspaceName = me?.email?.split("@")[1]?.split(".")[0] ?? "your workspace";
 
   return (
     <DashboardLayout
-      title="Form builder"
+      title={isEditing ? "Edit form" : "Form builder"}
       action={
         <>
-          <button className="tp-btn tp-btn-ghost">Discard</button>
-          <button className="tp-btn tp-btn-primary">Publish form</button>
+          <button className="tp-btn tp-btn-ghost" onClick={() => navigate({ to: "/dashboard/forms" })}>
+            Discard
+          </button>
+          <button
+            className="tp-btn tp-btn-primary"
+            onClick={() => save.mutate()}
+            disabled={save.isPending || !name.trim()}
+          >
+            {save.isPending ? "Saving…" : isEditing ? "Save changes" : "Publish form"}
+          </button>
         </>
       }
     >
+      {save.isError && (
+        <div className="tp-card p-3 mb-4 text-sm" style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>
+          Failed to save form. Please try again.
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-[1fr_400px] gap-6">
         <div className="space-y-4">
           <div className="tp-card p-5">
             <label className="text-xs font-medium block mb-1.5" style={{ color: "var(--muted-foreground)" }}>
               Form name
             </label>
-            <input className="tp-input" defaultValue="Homepage testimonial" />
-            <label className="text-xs font-medium block mt-4 mb-1.5" style={{ color: "var(--muted-foreground)" }}>
-              Form URL
-            </label>
-            <div className="flex items-center gap-2 text-sm">
-              <span style={{ color: "var(--subtle)" }}>trustpanel.com/c/northwind/</span>
-              <input className="tp-input" defaultValue="homepage" />
-            </div>
+            <input
+              className="tp-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Homepage testimonial"
+            />
           </div>
 
           <Section title="Questions to show">
-            <Toggle label="Star rating" defaultChecked locked />
-            <Toggle label="Name" defaultChecked locked />
-            <Toggle label="Job title" defaultChecked />
-            <Toggle label="Company name" defaultChecked />
-            <Toggle label="Profile photo" />
+            <Toggle label="Star rating" checked locked />
+            <Toggle label="Name" checked locked />
+            <Toggle label="Job title" checked onChange={() => {}} />
+            <Toggle label="Company name" checked onChange={() => {}} />
+            <Toggle label="Profile photo" checked={false} onChange={() => {}} />
           </Section>
 
           <Section title="Submission type">
             <div className="grid grid-cols-3 gap-2">
-              {(["text", "video", "both"] as const).map((t) => (
+              {(["Text", "Video", "Both"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setSubmissionType(t)}
@@ -98,13 +157,13 @@ function FormBuilder() {
                     color: submissionType === t ? "var(--primary-light)" : "var(--muted-foreground)",
                   }}
                 >
-                  {t === "both" ? "Both" : t === "text" ? "Text only" : "Video only"}
+                  {t === "Both" ? "Both" : t === "Text" ? "Text only" : "Video only"}
                 </button>
               ))}
             </div>
           </Section>
 
-          {submissionType !== "text" && (
+          {submissionType !== "Text" && (
             <Section title="Video settings">
               <label className="text-xs font-medium block mb-1.5" style={{ color: "var(--muted-foreground)" }}>
                 Max duration
@@ -131,27 +190,23 @@ function FormBuilder() {
             <label className="text-xs font-medium block mb-1.5" style={{ color: "var(--muted-foreground)" }}>
               Thank-you message
             </label>
-            <textarea className="tp-input" rows={3} defaultValue="Thank you! Your testimonial is now in our queue for review." />
+            <textarea
+              className="tp-input"
+              rows={3}
+              defaultValue="Thank you! Your testimonial is now in our queue for review."
+            />
             <label className="text-xs font-medium block mt-3 mb-1.5" style={{ color: "var(--muted-foreground)" }}>
               Redirect URL (optional)
             </label>
             <input className="tp-input" placeholder="https://yoursite.com/thanks" />
-            <label className="text-xs font-medium block mt-3 mb-1.5" style={{ color: "var(--muted-foreground)" }}>
-              Reward
-            </label>
-            <select className="tp-input">
-              <option>None</option>
-              <option>Discount code</option>
-              <option>Download link</option>
-            </select>
           </Section>
 
           <Section title="Notifications">
             <label className="text-xs font-medium block mb-1.5" style={{ color: "var(--muted-foreground)" }}>
               Notify on submission
             </label>
-            <input className="tp-input" defaultValue="alex@northwind.agency" />
-            <Toggle label="Auto-approve if rating ≥ 4 and sentiment positive" defaultChecked />
+            <input className="tp-input" defaultValue={me?.email ?? ""} />
+            <Toggle label="Auto-approve if rating ≥ 4 and sentiment positive" checked onChange={() => {}} />
           </Section>
         </div>
 
@@ -178,7 +233,7 @@ function FormBuilder() {
               style={{ width: 320, background: "white", color: "#0f0f14", minHeight: 480 }}
             >
               <div className="text-xs uppercase tracking-wider mb-2" style={{ color: "#7c6af7" }}>
-                Northwind
+                {workspaceName}
               </div>
               {previewStep === "rating" && (
                 <>
@@ -191,7 +246,7 @@ function FormBuilder() {
                   <div className="text-lg font-medium mb-3">Share your experience</div>
                   <div className="flex gap-1 mb-4 text-xs">
                     <span className="px-3 py-1.5 rounded-md text-white" style={{ background: "#7c6af7" }}>Write</span>
-                    {submissionType !== "text" && <span className="px-3 py-1.5 rounded-md bg-gray-100">Record video</span>}
+                    {submissionType !== "Text" && <span className="px-3 py-1.5 rounded-md bg-gray-100">Record video</span>}
                   </div>
                   <div className="border rounded-lg p-3 text-sm text-gray-400 min-h-[120px]">
                     Tell us what you liked…

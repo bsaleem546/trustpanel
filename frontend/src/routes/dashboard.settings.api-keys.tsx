@@ -40,12 +40,11 @@ function ApiKeys() {
     staleTime: 60_000,
   });
 
-  // Webhooks — backend doesn't expose a list endpoint yet; we track locally
-  const { data: webhooks = [] } = useQuery<WebhookEndpoint[]>({
+  const { data: webhooks = [] } = useQuery({
     queryKey: ["webhooks", workspaceId],
-    queryFn: async () => [],
+    queryFn: () => webhooksApi.list(workspaceId!),
     enabled: !!workspaceId,
-    staleTime: Infinity,
+    staleTime: 30_000,
   });
 
   const createKey = useMutation({
@@ -71,8 +70,8 @@ function ApiKeys() {
 
   const createWebhook = useMutation({
     mutationFn: () => webhooksApi.create(workspaceId!, webhookUrl.trim()),
-    onSuccess: (endpoint) => {
-      queryClient.setQueryData<WebhookEndpoint[]>(["webhooks", workspaceId], (old = []) => [...old, endpoint]);
+    onSuccess: () => {
+      invalidateWebhooks();
       setWebhookUrl("");
       setShowWebhookForm(false);
     },
@@ -80,10 +79,7 @@ function ApiKeys() {
 
   const removeWebhook = useMutation({
     mutationFn: (id: string) => webhooksApi.remove(id, workspaceId!),
-    onSuccess: (_, id) => {
-      queryClient.setQueryData<WebhookEndpoint[]>(["webhooks", workspaceId], (old = []) => old.filter((w) => w.id !== id));
-      invalidateWebhooks();
-    },
+    onSuccess: invalidateWebhooks,
   });
 
   function copyKey() {

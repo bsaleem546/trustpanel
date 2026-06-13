@@ -84,6 +84,24 @@ public static class PublicApiV1Endpoints
         // Webhook endpoint CRUD (dashboard auth)
         var whGroup = app.MapGroup("/api/webhooks").RequireAuthorization();
 
+        whGroup.MapGet("/", async (Guid workspaceId, ClaimsPrincipal user, IAppDbContext db) =>
+        {
+            var userId = user.GetUserId();
+            // Verify member access: any workspace member may list webhooks.
+            var isMember = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+                .AnyAsync(db.WorkspaceMembers,
+                    m => m.WorkspaceId == workspaceId && m.UserId == userId && m.AcceptedAt != null);
+            var isOwner = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+                .AnyAsync(db.Workspaces, w => w.Id == workspaceId && w.OwnerUserId == userId);
+            if (!isMember && !isOwner) return ApiResults.Forbidden("Access denied.");
+
+            var endpoints = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+                .ToListAsync(db.WebhookEndpoints
+                    .Where(e => e.WorkspaceId == workspaceId)
+                    .Select(e => new { e.Id, e.Url, e.CreatedAt }));
+            return ApiResults.Ok(endpoints, "Webhook endpoints.");
+        });
+
         whGroup.MapPost("/", async (WebhookCreateRequest request, ClaimsPrincipal user, IMediator mediator) =>
         {
             var result = await mediator.Send(

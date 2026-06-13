@@ -44,6 +44,11 @@ export const apiKeysApi = {
 };
 
 export const webhooksApi = {
+  list: (workspaceId: string) =>
+    api<Pick<WebhookEndpoint, "id" | "url" | "createdAt">[]>(
+      `/api/webhooks?workspaceId=${workspaceId}`
+    ),
+
   create: (workspaceId: string, url: string) =>
     api<WebhookEndpoint>("/api/webhooks", {
       method: "POST",

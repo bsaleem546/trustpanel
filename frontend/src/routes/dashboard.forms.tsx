@@ -58,7 +58,12 @@ function FormsList() {
               <Pill tone="primary">{f.allowedSubmissionType.toUpperCase()}</Pill>
             </div>
             <div className="flex gap-2">
-              <Link to="/dashboard/forms/create" className="tp-btn tp-btn-ghost flex-1" style={{ fontSize: 12 }}>
+              <Link
+                to="/dashboard/forms/create"
+                search={{ edit: f.id }}
+                className="tp-btn tp-btn-ghost flex-1"
+                style={{ fontSize: 12 }}
+              >
                 <Edit size={12} /> Edit
               </Link>
               <button

@@ -27,6 +27,13 @@ public static class BillingEndpoints
                 user.GetUserId(), request.ReturnUrl));
             return ApiResults.Ok(result, "Portal session created.");
         });
+
+        group.MapGet("/plan", async (Guid workspaceId, ClaimsPrincipal user, IMediator mediator) =>
+        {
+            var result = await mediator.Send(
+                new TrustPanel.Application.Billing.GetWorkspacePlanQuery(user.GetUserId(), workspaceId));
+            return ApiResults.Ok(result, "Current plan.");
+        });
     }
 
     private sealed record CheckoutRequest(string PriceId, string SuccessUrl, string CancelUrl);
