@@ -23,10 +23,8 @@ coverage*.json
 coverage*.xml
 coverage*.info
 
-# Local secrets & config overrides
-# Put real secrets here — these files are never committed:
-#   appsettings.Local.json
-#   appsettings.Development.Local.json  (merges on top of Development)
+# Local secrets & config overrides — never committed
+.env
 appsettings.Local.json
 appsettings.*.Local.json
 secrets.json

@@ -14,6 +14,9 @@ using TrustPanel.Application.Common;
 using TrustPanel.Infrastructure;
 using TrustPanel.Infrastructure.Jobs;
 
+// Load .env if present — real env vars always win (NoClobber).
+DotNetEnv.Env.NoClobber().TraversePath().Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();

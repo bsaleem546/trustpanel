@@ -8,16 +8,14 @@ Multi-tenant testimonial collection SaaS. ASP.NET Core 8 backend + TanStack Star
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| .NET SDK | 8.x | `dotnet --version` |
+| Docker | any | runs the backend, database, redis, search |
 | Node.js | 20+ | `node --version` |
 | npm | 10+ | ships with Node |
-| PostgreSQL | 15+ | local install or Docker |
-| Redis | 7+ | optional for dev — app falls back to in-memory |
-| Docker | any | optional, for `docker compose` workflow |
+| .NET SDK | 8.x | only needed to run EF migrations or tests |
 
 ---
 
-## Quick start — local development
+## Quick start
 
 ### 1. Clone and configure
 
@@ -26,69 +24,35 @@ git clone <repo-url>
 cd trustpanel
 ```
 
-Copy the backend environment file and fill in your local values:
+Copy and fill in the two env files (one per service):
 
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-Copy the local config template and fill in your real values:
-
-```bash
-cp backend/src/TrustPanel.Api/appsettings.Local.json.example \
-   backend/src/TrustPanel.Api/appsettings.Local.json
-```
-
-Then edit `appsettings.Local.json` with your actual credentials. This file is gitignored — safe for real secrets. ASP.NET Core automatically merges it on top of `appsettings.Development.json`.
-
-> Redis is optional in development. If `REDIS_CONNECTION` is not set, the app uses an in-memory fallback for rate limiting and caching.
+Edit `backend/.env` with your values — both files are gitignored so secrets are never committed.
 
 ---
 
-### 2. Database setup
-
-Start PostgreSQL (or use Docker):
+### 2. Start the backend (Docker)
 
 ```bash
-# Docker one-liner
-docker run -d --name trustpanel-pg \
-  -e POSTGRES_DB=trustpanel \
-  -e POSTGRES_USER=trustpanel \
-  -e POSTGRES_PASSWORD=change-me \
-  -p 5432:5432 \
-  postgres:15-alpine
+docker compose up -d --build
 ```
 
-Apply migrations:
+This starts the .NET API, PostgreSQL, Redis, and Meilisearch. The API is available at **http://localhost:5065**.
+
+Run migrations and seed plans (first time only):
 
 ```bash
-dotnet ef database update \
-  --project backend/src/TrustPanel.Api \
-  --startup-project backend/src/TrustPanel.Api
-```
-
-Seed billing plans:
-
-```powershell
-# PowerShell
-$env:DATABASE_URL = "Host=localhost;Port=5432;Database=trustpanel;Username=trustpanel;Password=change-me"
-.\scripts\seed-plans.ps1
+./scripts/migrate.ps1
+./scripts/seed-plans.ps1
 ```
 
 ---
 
-### 3. Start the backend
-
-```bash
-dotnet run --project backend/src/TrustPanel.Api
-```
-
-API runs at **http://localhost:5065**  
-Swagger UI at **http://localhost:5065/swagger**
-
----
-
-### 4. Start the frontend
+### 3. Start the frontend
 
 ```bash
 cd frontend
@@ -96,43 +60,36 @@ npm install
 npm run dev
 ```
 
-Frontend runs at **http://localhost:3000**
-
-All `/api/*` requests are proxied to `http://localhost:5065` automatically (configured in `vite.config.ts`). No CORS setup needed.
+Open **http://localhost:3000** — Vite proxies all `/api/*` requests to the backend automatically.
 
 ---
 
-## Running both at once (recommended)
-
-Open two terminals:
+## Docker commands
 
 ```bash
-# Terminal 1 — backend
-dotnet run --project backend/src/TrustPanel.Api
-
-# Terminal 2 — frontend
-cd frontend && npm run dev
-```
-
-Then open **http://localhost:3000**.
-
----
-
-## Docker Compose (production-like)
-
-```bash
-# Build and start everything (API + Nginx + PostgreSQL + Redis)
-docker compose -f docker-compose.prod.yml up -d --build
+# Build and start the backend (API + PostgreSQL + Redis + Meilisearch)
+docker compose up -d --build
 
 # Apply migrations
 ./scripts/migrate.ps1
 
-# Seed plans
+# Seed billing plans
 ./scripts/seed-plans.ps1
 
-# View logs
-docker compose -f docker-compose.prod.yml logs -f api
+# View API logs
+docker compose logs -f api
+
+# Stop everything
+docker compose down
 ```
+
+Then start the frontend separately:
+
+```bash
+cd frontend && npm run dev
+```
+
+Open **http://localhost:3000** — Vite proxies all `/api/*` requests to the backend at port 5065.
 
 ---
 
@@ -217,7 +174,6 @@ trustpanel/
 ├── scripts/            # migrate.ps1, seed-plans.ps1
 ├── docs/               # backend-ops.md
 ├── docker-compose.prod.yml
-├── .env.example
 └── README.md
 ```
 
@@ -225,7 +181,7 @@ trustpanel/
 
 ## Environment variables
 
-See [`.env.example`](.env.example) for the full list. Key ones for local dev:
+See [`backend/.env.example`](backend/.env.example) for the full list. Key ones for local dev:
 
 | Variable | Default / notes |
 |----------|----------------|
@@ -238,11 +194,7 @@ See [`.env.example`](.env.example) for the full list. Key ones for local dev:
 | `RESEND_API_KEY` | Optional — emails logged to console when absent |
 | `TURNSTILE_SECRET_KEY` | Optional — form submissions pass through when absent |
 
-For the frontend, copy the example and edit if needed:
-
-```bash
-cp frontend/.env.example frontend/.env.local
-```
+For the frontend, `frontend/.env` is already copied from `frontend/.env.example` in step 1.
 
 Leave `VITE_API_BASE_URL` empty in development — the Vite proxy handles it. Set it to your backend's public URL in production (e.g. `https://api.trustpanel.io`).
 
