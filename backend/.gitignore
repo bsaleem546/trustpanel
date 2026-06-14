@@ -24,9 +24,16 @@ coverage*.xml
 coverage*.info
 
 # Local secrets & config overrides
+# Put real secrets here — these files are never committed:
+#   appsettings.Local.json
+#   appsettings.Development.Local.json  (merges on top of Development)
 appsettings.Local.json
 appsettings.*.Local.json
 secrets.json
+
+# ASP.NET Core Data Protection keys (generated at runtime, machine-specific)
+keys/
+**/keys/DataProtection-Keys/
 
 # EF Core
 *.edmx.diagram

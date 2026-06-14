@@ -1,0 +1,28 @@
+{
+  // Copy this file to appsettings.Local.json and fill in real values.
+  // appsettings.Local.json is gitignored — safe for real secrets.
+  "ConnectionStrings": {
+    "Default": "Host=localhost;Port=5432;Database=trustpanel;Username=trustpanel;Password=YOUR_PASSWORD"
+  },
+  "REDIS_CONNECTION": "localhost:6379",
+  "JWT_SECRET": "replace-with-64-plus-random-characters-never-commit-this-value",
+  "JWT_ISSUER": "http://localhost:5065",
+  "JWT_AUDIENCE": "http://localhost:3000",
+  "JWT_EXPIRY_MINUTES": "15",
+
+  // Optional — leave out to disable the feature locally
+  "ANTHROPIC_API_KEY": "",
+  "STRIPE_SECRET_KEY": "",
+  "STRIPE_WEBHOOK_SECRET": "",
+  "RESEND_API_KEY": "",
+  "TURNSTILE_SECRET_KEY": "",
+  "GOOGLE_CLIENT_ID": "",
+  "GOOGLE_CLIENT_SECRET": "",
+  "SENTRY_DSN": "",
+  "R2_ACCOUNT_ID": "",
+  "R2_ACCESS_KEY_ID": "",
+  "R2_SECRET_ACCESS_KEY": "",
+  "R2_BUCKET_NAME": "",
+  "MEILISEARCH_URL": "",
+  "MEILISEARCH_API_KEY": ""
+}

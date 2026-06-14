@@ -32,17 +32,14 @@ Copy the backend environment file and fill in your local values:
 cp .env.example .env
 ```
 
-Minimum required for local dev (edit `backend/src/TrustPanel.Api/appsettings.Development.json`):
+Copy the local config template and fill in your real values:
 
-```json
-{
-  "ConnectionStrings": {
-    "Default": "Host=localhost;Port=5432;Database=trustpanel;Username=trustpanel;Password=change-me"
-  },
-  "REDIS_CONNECTION": "localhost:6379",
-  "JWT_SECRET": "dev-secret-at-least-64-chars-long-replace-in-prod-1234567890abcdef"
-}
+```bash
+cp backend/src/TrustPanel.Api/appsettings.Local.json.example \
+   backend/src/TrustPanel.Api/appsettings.Local.json
 ```
+
+Then edit `appsettings.Local.json` with your actual credentials. This file is gitignored — safe for real secrets. ASP.NET Core automatically merges it on top of `appsettings.Development.json`.
 
 > Redis is optional in development. If `REDIS_CONNECTION` is not set, the app uses an in-memory fallback for rate limiting and caching.
 
@@ -241,14 +238,13 @@ See [`.env.example`](.env.example) for the full list. Key ones for local dev:
 | `RESEND_API_KEY` | Optional — emails logged to console when absent |
 | `TURNSTILE_SECRET_KEY` | Optional — form submissions pass through when absent |
 
-For the frontend, create `frontend/.env.local`:
+For the frontend, copy the example and edit if needed:
 
-```env
-# Only needed if the backend runs on a non-default port
-VITE_API_BASE_URL=
+```bash
+cp frontend/.env.example frontend/.env.local
 ```
 
-Leave `VITE_API_BASE_URL` empty in development — the Vite proxy handles it.
+Leave `VITE_API_BASE_URL` empty in development — the Vite proxy handles it. Set it to your backend's public URL in production (e.g. `https://api.trustpanel.io`).
 
 ---
 

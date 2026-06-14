@@ -15,6 +15,12 @@ desktop.ini
 .env.*
 !.env.example
 
+# Docker local overrides
+docker-compose.override.yml
+
+# ASP.NET Core Data Protection keys
+keys/
+
 # Logs
 *.log
 logs/
